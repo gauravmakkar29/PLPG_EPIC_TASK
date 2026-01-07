@@ -33,7 +33,11 @@ interface ProtectedRouteProps {
  * />
  * ```
  */
+<<<<<<< HEAD
 export default function ProtectedRoute({ children, requireOnboarding: _requireOnboarding = false }: ProtectedRouteProps) {
+=======
+export default function ProtectedRoute({ children }: ProtectedRouteProps) {
+>>>>>>> 06ef476c0a79162633c7b8017b3cb9ff185d9f69
   const { isLoaded, isSignedIn } = useAuth();
 
   // Show loading spinner while checking auth state

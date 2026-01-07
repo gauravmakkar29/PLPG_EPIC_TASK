@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import pinoHttpModule from 'pino-http';
 import type { Request, Response, NextFunction } from 'express';
 import { logger } from '../lib/logger.js';
@@ -5,6 +6,15 @@ import { logger } from '../lib/logger.js';
 const pinoHttp = pinoHttpModule.default || pinoHttpModule;
 
 export const requestLogger: (req: Request, res: Response, next: NextFunction) => void = pinoHttp({
+=======
+import pinoHttpLib from 'pino-http';
+import type { Request, Response, RequestHandler } from 'express';
+import { logger } from '../lib/logger.js';
+
+// Handle ESM/CommonJS interop for pino-http
+const pinoHttp = (pinoHttpLib as any).default || pinoHttpLib;
+export const requestLogger: RequestHandler = (pinoHttp as typeof import('pino-http').default)({
+>>>>>>> 06ef476c0a79162633c7b8017b3cb9ff185d9f69
   logger,
   autoLogging: {
     ignore: (req: Request) => req.url === '/v1/health',
