@@ -41,3 +41,4 @@ export type SubscriptionStatus =
   | 'trialing'
   | 'unpaid';
 
+export type SubscriptionPlan = 'free' | 'pro';
