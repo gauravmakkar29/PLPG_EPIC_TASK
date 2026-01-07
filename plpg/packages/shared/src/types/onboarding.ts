@@ -29,6 +29,7 @@ export interface OnboardingState {
   isComplete: boolean;
   isSkipped: boolean;
   currentRole: string | null;
+  customRole: string | null;
   targetRole: string | null;
   weeklyHours: number | null;
   startedAt: Date;
@@ -44,6 +45,7 @@ export interface OnboardingStateResponse {
   isSkipped: boolean;
   data: {
     currentRole: string | null;
+    customRole: string | null;
     targetRole: string | null;
     weeklyHours: number | null;
   };
@@ -51,6 +53,7 @@ export interface OnboardingStateResponse {
 
 export interface Step1Data {
   currentRole: string;
+  customRole?: string;
 }
 
 export interface Step2Data {
@@ -66,12 +69,12 @@ export type OnboardingStepData = Step1Data | Step2Data | Step3Data;
 export const ONBOARDING_TOTAL_STEPS = 3;
 
 export const CURRENT_ROLES = [
-  { value: 'student', label: 'Student', description: 'Currently studying or in a bootcamp' },
-  { value: 'junior_developer', label: 'Junior Developer', description: '0-2 years of experience' },
-  { value: 'mid_developer', label: 'Mid-Level Developer', description: '2-5 years of experience' },
-  { value: 'senior_developer', label: 'Senior Developer', description: '5+ years of experience' },
-  { value: 'career_changer', label: 'Career Changer', description: 'Transitioning from another field' },
-  { value: 'self_taught', label: 'Self-Taught', description: 'Learning on your own' },
+  { value: 'backend_developer', label: 'Backend Developer', description: 'Build server-side applications and APIs' },
+  { value: 'devops_engineer', label: 'DevOps Engineer', description: 'Manage infrastructure and deployments' },
+  { value: 'data_analyst', label: 'Data Analyst', description: 'Analyze data and create insights' },
+  { value: 'qa_engineer', label: 'QA Engineer', description: 'Test and ensure software quality' },
+  { value: 'it_professional', label: 'IT Professional', description: 'General IT support and administration' },
+  { value: 'other', label: 'Other', description: 'Specify your role' },
 ] as const;
 
 export const TARGET_ROLES = [

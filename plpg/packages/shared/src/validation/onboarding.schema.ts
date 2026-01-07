@@ -30,7 +30,11 @@ export const learningStyleSchema = z.object({
 // Step-specific schemas for the 3-step onboarding flow
 export const step1Schema = z.object({
   currentRole: z.string().min(1, 'Please select your current role'),
-});
+  customRole: z.string().optional(),
+}).refine(
+  (data) => data.currentRole !== 'other' || (data.customRole && data.customRole.trim().length > 0),
+  { message: 'Please specify your role', path: ['customRole'] }
+);
 
 export const step2Schema = z.object({
   targetRole: z.string().min(1, 'Please select your target role'),

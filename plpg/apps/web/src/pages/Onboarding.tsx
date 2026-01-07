@@ -23,7 +23,7 @@ export default function Onboarding() {
     });
   };
 
-  const handleStep1Next = (data: { currentRole: string }) => {
+  const handleStep1Next = (data: { currentRole: string; customRole?: string }) => {
     saveStep.mutate({ step: 1, data });
   };
 
@@ -85,6 +85,7 @@ export default function Onboarding() {
       {currentStep === 1 && (
         <Step1CurrentRole
           initialValue={onboardingState?.data.currentRole || null}
+          initialCustomRole={onboardingState?.data.customRole || null}
           onNext={handleStep1Next}
           isLoading={isStepLoading}
         />
