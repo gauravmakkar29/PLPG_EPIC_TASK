@@ -2,9 +2,10 @@ import type { Request, Response, NextFunction } from 'express';
 import { analyzeGap, type GapAnalysisResult } from '../services/gapAnalysis.service.js';
 import { sequenceSkills, type SequencingResult } from '../services/sequencing.service.js';
 import { generateRoadmap, type RoadmapGenerationResult } from '../services/roadmapGeneration.service.js';
+import { getRoadmap, type RoadmapResponse } from '../services/roadmapRetrieval.service.js';
 import { prisma } from '../lib/prisma.js';
 import { logger } from '../lib/logger.js';
-import { BadRequestError } from '@plpg/shared';
+import { BadRequestError, NotFoundError } from '@plpg/shared';
 
 /**
  * Analyze the gap between user's current skills and target role requirements
@@ -110,6 +111,122 @@ export async function generateRoadmapEndpoint(
     });
   } catch (error) {
     logger.error({ error, userId: req.user?.id }, 'Error generating roadmap');
+    next(error);
+  }
+}
+
+/**
+ * Get user's active roadmap with all phases, modules, resources, progress, and timeline
+ * GET /v1/roadmap
+ * Returns 404 if no roadmap exists (frontend should redirect to onboarding)
+ */
+export async function getRoadmapEndpoint(
+  req: Request,
+  res: Response<{ success: true; data: RoadmapResponse }>,
+  next: NextFunction
+): Promise<void> {
+  try {
+    const userId = req.user!.id;
+
+    const roadmap = await getRoadmap(userId);
+
+    // Serialize Date to ISO string for JSON response
+    res.json({
+      success: true,
+      data: {
+        ...roadmap,
+        timeline: {
+          ...roadmap.timeline,
+          projectedCompletion: roadmap.timeline.projectedCompletion.toISOString(),
+        },
+        createdAt: roadmap.createdAt.toISOString(),
+        updatedAt: roadmap.updatedAt.toISOString(),
+        phases: roadmap.phases.map((phase) => ({
+          ...phase,
+          modules: phase.modules.map((module) => ({
+            ...module,
+            progress: module.progress
+              ? {
+                  ...module.progress,
+                  startedAt: module.progress.startedAt?.toISOString() ?? null,
+                  completedAt: module.progress.completedAt?.toISOString() ?? null,
+                }
+              : null,
+          })),
+        })),
+      },
+    });
+  } catch (error) {
+    if (error instanceof NotFoundError) {
+      // Return 404 with a message indicating redirect to onboarding
+      res.status(404).json({
+        success: false,
+        error: error.message,
+        redirectTo: '/onboarding',
+      });
+      return;
+    }
+    logger.error({ error, userId: req.user?.id }, 'Error retrieving roadmap');
+    next(error);
+  }
+}
+
+/**
+ * Get specific roadmap by ID
+ * GET /v1/roadmap/:id
+ */
+export async function getRoadmapById(
+  req: Request,
+  res: Response<{ success: true; data: RoadmapResponse }>,
+  next: NextFunction
+): Promise<void> {
+  try {
+    const userId = req.user!.id;
+    const roadmapId = req.params.id;
+
+    // Verify roadmap belongs to user
+    const roadmap = await prisma.roadmap.findFirst({
+      where: {
+        id: roadmapId,
+        userId,
+      },
+    });
+
+    if (!roadmap) {
+      throw new NotFoundError('Roadmap not found');
+    }
+
+    // Use the same retrieval service
+    const roadmapData = await getRoadmap(userId);
+
+    // Serialize Date to ISO string for JSON response
+    res.json({
+      success: true,
+      data: {
+        ...roadmapData,
+        timeline: {
+          ...roadmapData.timeline,
+          projectedCompletion: roadmapData.timeline.projectedCompletion.toISOString(),
+        },
+        createdAt: roadmapData.createdAt.toISOString(),
+        updatedAt: roadmapData.updatedAt.toISOString(),
+        phases: roadmapData.phases.map((phase) => ({
+          ...phase,
+          modules: phase.modules.map((module) => ({
+            ...module,
+            progress: module.progress
+              ? {
+                  ...module.progress,
+                  startedAt: module.progress.startedAt?.toISOString() ?? null,
+                  completedAt: module.progress.completedAt?.toISOString() ?? null,
+                }
+              : null,
+          })),
+        })),
+      },
+    });
+  } catch (error) {
+    logger.error({ error, userId: req.user?.id, roadmapId: req.params.id }, 'Error retrieving roadmap by ID');
     next(error);
   }
 }
