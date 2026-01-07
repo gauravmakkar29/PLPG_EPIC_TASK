@@ -66,7 +66,7 @@ export interface Step3Data {
 
 export type OnboardingStepData = Step1Data | Step2Data | Step3Data;
 
-export const ONBOARDING_TOTAL_STEPS = 3;
+export const ONBOARDING_TOTAL_STEPS = 4;
 
 export const CURRENT_ROLES = [
   { value: 'backend_developer', label: 'Backend Developer', description: 'Build server-side applications and APIs' },

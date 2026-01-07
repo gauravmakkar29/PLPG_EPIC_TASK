@@ -5,7 +5,7 @@ interface ProgressIndicatorProps {
   totalSteps: number;
 }
 
-const STEP_LABELS = ['Current Role', 'Target Role', 'Time Budget'];
+const STEP_LABELS = ['Current Role', 'Target Role', 'Time Budget', 'Review'];
 
 export default function ProgressIndicator({ currentStep, totalSteps }: ProgressIndicatorProps) {
   return (

@@ -51,6 +51,18 @@ async function completeOnboardingApi(getToken: () => Promise<string | null>): Pr
   return response.data.data;
 }
 
+async function gotoStepApi(step: number, getToken: () => Promise<string | null>): Promise<OnboardingStateResponse> {
+  const token = await getToken();
+  const response = await api.post<{ success: true; data: OnboardingStateResponse }>(
+    `/onboarding/goto/${step}`,
+    {},
+    {
+      headers: { Authorization: `Bearer ${token}` },
+    }
+  );
+  return response.data.data;
+}
+
 // Hooks
 export function useOnboardingState() {
   const { getToken, isSignedIn } = useAuth();
@@ -94,6 +106,18 @@ export function useCompleteOnboarding() {
 
   return useMutation({
     mutationFn: () => completeOnboardingApi(getToken),
+    onSuccess: (data) => {
+      queryClient.setQueryData(ONBOARDING_KEY, data);
+    },
+  });
+}
+
+export function useGotoStep() {
+  const { getToken } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (step: number) => gotoStepApi(step, getToken),
     onSuccess: (data) => {
       queryClient.setQueryData(ONBOARDING_KEY, data);
     },

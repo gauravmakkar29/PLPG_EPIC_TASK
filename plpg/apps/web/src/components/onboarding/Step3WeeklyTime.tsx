@@ -87,7 +87,7 @@ export default function Step3WeeklyTime({
               : 'bg-secondary-300 cursor-not-allowed'
           )}
         >
-          {isLoading ? 'Finishing...' : 'Complete Setup'}
+          {isLoading ? 'Saving...' : 'Next'}
         </button>
       </div>
     </div>

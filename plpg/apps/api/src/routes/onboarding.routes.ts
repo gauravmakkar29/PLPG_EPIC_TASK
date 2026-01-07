@@ -2,6 +2,7 @@ import { Router } from 'express';
 import {
   getOnboardingState,
   saveStep,
+  gotoStep,
   skipOnboarding,
   completeOnboarding,
 } from '../controllers/onboarding.controller.js';
@@ -44,6 +45,9 @@ router.patch('/step/:step', validate({ params: stepParamsSchema }), async (req, 
     next(error);
   }
 }, saveStep);
+
+// Navigate to a specific step (for edit functionality)
+router.post('/goto/:step', validate({ params: stepParamsSchema }), gotoStep);
 
 // Skip onboarding
 router.post('/skip', skipOnboarding);
