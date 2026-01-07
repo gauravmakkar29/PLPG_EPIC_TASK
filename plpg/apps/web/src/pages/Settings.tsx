@@ -2,6 +2,7 @@ import { useUser } from '@clerk/clerk-react';
 import { useNavigate } from 'react-router-dom';
 import { useOnboardingState } from '../hooks/useOnboarding';
 import { SignOutButton } from '../components/auth/SignOutButton';
+import { EmailVerificationBanner } from '../components/auth/EmailVerificationBanner';
 
 const CURRENT_ROLES: Record<string, string> = {
   'backend-developer': 'Backend Developer',
@@ -88,6 +89,7 @@ export default function Settings() {
 
       <main className="container mx-auto px-4 py-8">
         <div className="max-w-2xl mx-auto space-y-6">
+          <EmailVerificationBanner />
           {/* Profile Section */}
           <div className="bg-white rounded-xl shadow-sm p-6">
             <div className="flex items-center justify-between mb-4">

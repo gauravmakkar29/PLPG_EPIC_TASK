@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../services/api';
 import { SignOutButton } from '../components/auth/SignOutButton';
+import { EmailVerificationBanner } from '../components/auth/EmailVerificationBanner';
 
 interface HealthStatus {
   status: 'healthy' | 'unhealthy';
@@ -79,6 +80,7 @@ export default function Dashboard() {
       </header>
 
       <main className="container mx-auto px-4 py-8">
+        <EmailVerificationBanner />
         <div className="grid gap-6">
           {/* System Health Status */}
           <div className="bg-white rounded-xl shadow-sm p-6">

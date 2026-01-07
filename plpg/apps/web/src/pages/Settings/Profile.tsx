@@ -1,6 +1,7 @@
 import { useUser, UserProfile } from '@clerk/clerk-react';
 import { useNavigate } from 'react-router-dom';
 import { useSession } from '../../hooks/useSession';
+import { EmailVerificationBanner } from '../../components/auth/EmailVerificationBanner';
 
 export function ProfilePage() {
   const { user, isLoaded } = useUser();
@@ -78,6 +79,7 @@ export function ProfilePage() {
 
       <main className="container mx-auto px-4 py-8">
         <div className="max-w-2xl mx-auto space-y-6">
+          <EmailVerificationBanner />
           {/* Profile Information Card */}
           <div className="bg-white rounded-xl shadow-sm p-6">
             <h2 className="text-xl font-semibold text-secondary-900 mb-6">Profile Information</h2>
