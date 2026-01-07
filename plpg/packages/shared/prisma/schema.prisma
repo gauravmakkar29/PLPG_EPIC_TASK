@@ -80,6 +80,7 @@ model OnboardingState {
   isComplete   Boolean   @default(false)
   isSkipped    Boolean   @default(false)
   currentRole  String?
+  customRole   String?
   targetRole   String?
   weeklyHours  Int?
   startedAt    DateTime  @default(now())

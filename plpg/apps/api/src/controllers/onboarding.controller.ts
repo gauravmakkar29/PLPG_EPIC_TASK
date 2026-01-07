@@ -39,6 +39,7 @@ export async function getOnboardingState(
       isSkipped: onboardingState.isSkipped,
       data: {
         currentRole: onboardingState.currentRole,
+        customRole: onboardingState.customRole,
         targetRole: onboardingState.targetRole,
         weeklyHours: onboardingState.weeklyHours,
       },
@@ -79,6 +80,7 @@ export async function saveStep(
     // Prepare update data based on step
     const updateData: {
       currentRole?: string;
+      customRole?: string | null;
       targetRole?: string;
       weeklyHours?: number;
       currentStep?: number;
@@ -88,6 +90,7 @@ export async function saveStep(
       case 1: {
         const data = req.body as Step1Data;
         updateData.currentRole = data.currentRole;
+        updateData.customRole = data.customRole || null;
         updateData.currentStep = Math.max(onboardingState.currentStep, 2);
         break;
       }
@@ -120,6 +123,7 @@ export async function saveStep(
       isSkipped: updatedState.isSkipped,
       data: {
         currentRole: updatedState.currentRole,
+        customRole: updatedState.customRole,
         targetRole: updatedState.targetRole,
         weeklyHours: updatedState.weeklyHours,
       },
@@ -166,6 +170,7 @@ export async function skipOnboarding(
       isSkipped: updatedState.isSkipped,
       data: {
         currentRole: updatedState.currentRole,
+        customRole: updatedState.customRole,
         targetRole: updatedState.targetRole,
         weeklyHours: updatedState.weeklyHours,
       },
@@ -228,6 +233,7 @@ export async function completeOnboarding(
       isSkipped: updatedState.isSkipped,
       data: {
         currentRole: updatedState.currentRole,
+        customRole: updatedState.customRole,
         targetRole: updatedState.targetRole,
         weeklyHours: updatedState.weeklyHours,
       },
