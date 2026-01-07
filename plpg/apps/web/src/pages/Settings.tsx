@@ -1,7 +1,7 @@
-import { useState } from 'react';
-import { useUser, useClerk } from '@clerk/clerk-react';
+import { useUser } from '@clerk/clerk-react';
 import { useNavigate } from 'react-router-dom';
 import { useOnboardingState } from '../hooks/useOnboarding';
+import { SignOutButton } from '../components/auth/SignOutButton';
 
 const CURRENT_ROLES: Record<string, string> = {
   'backend-developer': 'Backend Developer',
@@ -31,16 +31,8 @@ const WEEKLY_HOURS: Record<number, string> = {
 
 export default function Settings() {
   const { user } = useUser();
-  const { signOut } = useClerk();
   const navigate = useNavigate();
   const { data: onboardingState, isLoading: isLoadingOnboarding } = useOnboardingState();
-  const [isSigningOut, setIsSigningOut] = useState(false);
-
-  const handleSignOut = async () => {
-    setIsSigningOut(true);
-    await signOut();
-    navigate('/');
-  };
 
   const handleEditPreferences = () => {
     navigate('/onboarding?edit=true');
@@ -98,7 +90,28 @@ export default function Settings() {
         <div className="max-w-2xl mx-auto space-y-6">
           {/* Profile Section */}
           <div className="bg-white rounded-xl shadow-sm p-6">
-            <h2 className="text-xl font-semibold text-secondary-900 mb-4">Profile</h2>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-semibold text-secondary-900">Profile</h2>
+              <button
+                onClick={() => navigate('/settings/profile')}
+                className="inline-flex items-center gap-2 px-4 py-2 text-primary-600 bg-primary-50 rounded-lg hover:bg-primary-100 transition-colors font-medium"
+              >
+                <svg
+                  className="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+                  />
+                </svg>
+                Edit Profile
+              </button>
+            </div>
             <div className="flex items-center gap-4">
               {user?.imageUrl ? (
                 <img
@@ -208,35 +221,7 @@ export default function Settings() {
           {/* Account Section */}
           <div className="bg-white rounded-xl shadow-sm p-6">
             <h2 className="text-xl font-semibold text-secondary-900 mb-4">Account</h2>
-            <button
-              onClick={handleSignOut}
-              disabled={isSigningOut}
-              className="inline-flex items-center gap-2 px-4 py-2 text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition-colors font-medium disabled:opacity-50"
-            >
-              {isSigningOut ? (
-                <>
-                  <div className="w-4 h-4 border-2 border-red-600 border-t-transparent rounded-full animate-spin"></div>
-                  Signing out...
-                </>
-              ) : (
-                <>
-                  <svg
-                    className="w-4 h-4"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
-                    />
-                  </svg>
-                  Sign Out
-                </>
-              )}
-            </button>
+            <SignOutButton variant="danger" />
           </div>
         </div>
       </main>

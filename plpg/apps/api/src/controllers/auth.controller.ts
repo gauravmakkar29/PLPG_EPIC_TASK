@@ -6,6 +6,26 @@ import { prisma } from '../lib/prisma.js';
 import { logger } from '../lib/logger.js';
 import { env } from '../lib/env.js';
 
+/**
+ * Get current user session
+ * GET /v1/auth/me
+ * Requires authentication via requireAuth middleware
+ */
+export async function getMe(req: Request, res: Response<Session>): Promise<void> {
+  // req.user populated by requireAuth middleware
+  const { id, email, name, subscriptionStatus, trialEndsAt } = req.user!;
+
+  const session: Session = {
+    userId: id,
+    email,
+    name,
+    subscriptionStatus,
+    trialEndsAt: trialEndsAt?.toISOString() ?? null,
+  };
+
+  res.json(session);
+}
+
 export async function getSession(
   req: Request,
   res: Response<{ success: true; data: Session }>,
@@ -17,20 +37,10 @@ export async function getSession(
     const session: Session = {
       userId: user.id,
       email: user.email,
-      name: null, // Will be populated from database
+      name: user.name,
       subscriptionStatus: user.subscriptionStatus,
       trialEndsAt: user.trialEndsAt?.toISOString() ?? null,
     };
-
-    // Get full user details from database
-    const dbUser = await prisma.user.findUnique({
-      where: { id: user.id },
-      select: { name: true },
-    });
-
-    if (dbUser) {
-      session.name = dbUser.name;
-    }
 
     res.json({ success: true, data: session });
   } catch (error) {

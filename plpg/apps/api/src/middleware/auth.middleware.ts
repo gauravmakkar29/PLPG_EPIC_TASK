@@ -11,6 +11,7 @@ declare global {
         id: string;
         clerkId: string;
         email: string;
+        name: string | null;
         subscriptionStatus: 'free' | 'trial' | 'pro';
         trialEndsAt: Date | null;
       };
@@ -58,6 +59,7 @@ export async function requireAuth(
       id: user.id,
       clerkId: user.clerkId,
       email: user.email,
+      name: user.name,
       subscriptionStatus,
       trialEndsAt: user.trialEndDate,
     };
@@ -162,6 +164,7 @@ export async function optionalAuth(
           id: user.id,
           clerkId: user.clerkId,
           email: user.email,
+          name: user.name,
           subscriptionStatus,
           trialEndsAt: user.trialEndDate,
         };
