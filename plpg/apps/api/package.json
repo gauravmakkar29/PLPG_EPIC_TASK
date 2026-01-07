@@ -15,7 +15,9 @@
   "dependencies": {
     "@clerk/express": "^0.0.15",
     "@plpg/shared": "workspace:*",
+    "@prisma/client": "^5.9.1",
     "cors": "^2.8.5",
+    "dotenv": "^16.4.1",
     "express": "^4.18.2",
     "express-rate-limit": "^7.1.5",
     "helmet": "^7.1.0",
