@@ -41,7 +41,7 @@ export const step2Schema = z.object({
 });
 
 export const step3Schema = z.object({
-  weeklyHours: z.number().min(1, 'Please select your weekly time commitment').max(40),
+  weeklyHours: z.number().min(5, 'Minimum weekly commitment is 5 hours').max(20, 'Maximum weekly commitment is 20 hours'),
 });
 
 export const stepParamsSchema = z.object({
