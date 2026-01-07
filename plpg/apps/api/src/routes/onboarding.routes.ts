@@ -2,12 +2,14 @@ import { Router } from 'express';
 import {
   getOnboardingState,
   saveStep,
+  gotoStep,
   skipOnboarding,
   completeOnboarding,
+  restartOnboarding,
 } from '../controllers/onboarding.controller.js';
 import { requireAuth } from '../middleware/auth.middleware.js';
 import { validate } from '../middleware/validate.middleware.js';
-import { step1Schema, step2Schema, step3Schema, stepParamsSchema } from '@plpg/shared';
+import { step1Schema, step2Schema, step3Schema, step4Schema, stepParamsSchema } from '@plpg/shared';
 
 const router = Router();
 
@@ -33,6 +35,9 @@ router.patch('/step/:step', validate({ params: stepParamsSchema }), async (req, 
     case 3:
       bodySchema = step3Schema;
       break;
+    case 4:
+      bodySchema = step4Schema;
+      break;
     default:
       return next();
   }
@@ -45,8 +50,14 @@ router.patch('/step/:step', validate({ params: stepParamsSchema }), async (req, 
   }
 }, saveStep);
 
+// Navigate to a specific step (for edit functionality)
+router.post('/goto/:step', validate({ params: stepParamsSchema }), gotoStep);
+
 // Skip onboarding
 router.post('/skip', skipOnboarding);
+
+// Restart onboarding for edit preferences
+router.post('/restart', restartOnboarding);
 
 // Complete onboarding
 router.post('/complete', completeOnboarding);

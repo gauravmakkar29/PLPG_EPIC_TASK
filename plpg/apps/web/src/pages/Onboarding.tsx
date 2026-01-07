@@ -1,17 +1,30 @@
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ONBOARDING_TOTAL_STEPS } from '@plpg/shared';
 import OnboardingLayout from '../components/onboarding/OnboardingLayout';
 import Step1CurrentRole from '../components/onboarding/Step1CurrentRole';
 import Step2TargetRole from '../components/onboarding/Step2TargetRole';
 import Step3WeeklyTime from '../components/onboarding/Step3WeeklyTime';
-import { useOnboardingState, useSaveStep, useSkipOnboarding, useCompleteOnboarding } from '../hooks/useOnboarding';
+<<<<<<< HEAD
+import Step4ExistingSkills from '../components/onboarding/Step4ExistingSkills';
+import Step5Summary from '../components/onboarding/Step5Summary';
+import { useOnboardingState, useSaveStep, useSkipOnboarding, useCompleteOnboarding, useGotoStep } from '../hooks/useOnboarding';
+=======
+import Step4Summary from '../components/onboarding/Step4Summary';
+import { useOnboardingState, useSaveStep, useSkipOnboarding, useCompleteOnboarding, useGotoStep, useRestartOnboarding } from '../hooks/useOnboarding';
+>>>>>>> a974aacb873fcc97a5f18555b5968d8dd9bf181b
+import { track } from '../lib/analytics';
 
 export default function Onboarding() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const isEditMode = searchParams.get('edit') === 'true';
+
   const { data: onboardingState, isLoading: isLoadingState } = useOnboardingState();
   const saveStep = useSaveStep();
   const skipOnboarding = useSkipOnboarding();
   const completeOnboarding = useCompleteOnboarding();
+  const gotoStep = useGotoStep();
+  const restartOnboarding = useRestartOnboarding();
 
   const currentStep = onboardingState?.currentStep || 1;
 
@@ -41,19 +54,62 @@ export default function Onboarding() {
     saveStep.mutate({ step: 2, data: { targetRole: onboardingState?.data.targetRole || '' } });
   };
 
-  const handleComplete = (data: { weeklyHours: number }) => {
-    saveStep.mutate(
-      { step: 3, data },
-      {
-        onSuccess: () => {
-          completeOnboarding.mutate(undefined, {
-            onSuccess: () => {
-              navigate('/dashboard');
-            },
-          });
-        },
-      }
-    );
+  const handleStep3Next = (data: { weeklyHours: number }) => {
+    // Save step 3 data and move to step 4 (existing skills)
+    saveStep.mutate({ step: 3, data });
+  };
+
+  const handleStep4Back = () => {
+    // Navigate back to step 3 - the state already has the data
+    saveStep.mutate({ step: 3, data: { weeklyHours: onboardingState?.data.weeklyHours || 10 } });
+  };
+
+  const handleStep4Next = (data: { existingSkills: string[] }) => {
+    // Save step 4 data and move to step 5 (summary)
+    saveStep.mutate({ step: 4, data });
+  };
+
+  const handleStep5Edit = (step: number) => {
+    // Navigate back to a specific step for editing
+    gotoStep.mutate(step);
+  };
+
+  const handleGeneratePath = () => {
+    // Track analytics event before completing
+<<<<<<< HEAD
+    track('onboarding_completed', {
+      currentRole: onboardingState?.data.currentRole,
+      targetRole: onboardingState?.data.targetRole,
+      weeklyHours: onboardingState?.data.weeklyHours,
+      existingSkillsCount: onboardingState?.data.existingSkills?.length || 0,
+    });
+=======
+    if (isEditMode) {
+      track('preferences_updated', {
+        currentRole: onboardingState?.data.currentRole,
+        targetRole: onboardingState?.data.targetRole,
+        weeklyHours: onboardingState?.data.weeklyHours,
+        isReOnboarding: true,
+      });
+    } else {
+      track('onboarding_completed', {
+        currentRole: onboardingState?.data.currentRole,
+        targetRole: onboardingState?.data.targetRole,
+        weeklyHours: onboardingState?.data.weeklyHours,
+      });
+    }
+>>>>>>> a974aacb873fcc97a5f18555b5968d8dd9bf181b
+
+    completeOnboarding.mutate(undefined, {
+      onSuccess: () => {
+        track('roadmap_generated', {
+          currentRole: onboardingState?.data.currentRole,
+          targetRole: onboardingState?.data.targetRole,
+          isReOnboarding: isEditMode,
+        });
+        navigate('/dashboard');
+      },
+    });
   };
 
   if (isLoadingState) {
@@ -67,13 +123,20 @@ export default function Onboarding() {
     );
   }
 
-  // If onboarding is complete, redirect to dashboard
-  if (onboardingState?.isComplete || onboardingState?.isSkipped) {
+  // If onboarding is complete and not in edit mode, redirect to dashboard
+  // In edit mode, allow users to go through onboarding again
+  if ((onboardingState?.isComplete || onboardingState?.isSkipped) && !isEditMode) {
     navigate('/dashboard');
     return null;
   }
 
-  const isStepLoading = saveStep.isPending || skipOnboarding.isPending || completeOnboarding.isPending;
+  // In edit mode, if onboarding is complete but we just entered, restart it
+  if (isEditMode && (onboardingState?.isComplete || onboardingState?.isSkipped) && currentStep === 4) {
+    // Restart onboarding to step 1 for editing
+    restartOnboarding.mutate();
+  }
+
+  const isStepLoading = saveStep.isPending || skipOnboarding.isPending || completeOnboarding.isPending || gotoStep.isPending;
 
   return (
     <OnboardingLayout
@@ -103,9 +166,32 @@ export default function Onboarding() {
       {currentStep === 3 && (
         <Step3WeeklyTime
           initialValue={onboardingState?.data.weeklyHours || null}
-          onComplete={handleComplete}
+          onComplete={handleStep3Next}
           onBack={handleStep3Back}
           isLoading={isStepLoading}
+        />
+      )}
+
+      {currentStep === 4 && (
+        <Step4ExistingSkills
+          initialValue={onboardingState?.data.existingSkills || []}
+          onNext={handleStep4Next}
+          onBack={handleStep4Back}
+          isLoading={isStepLoading}
+        />
+      )}
+
+      {currentStep === 5 && (
+        <Step5Summary
+          currentRole={onboardingState?.data.currentRole || null}
+          customRole={onboardingState?.data.customRole || null}
+          targetRole={onboardingState?.data.targetRole || null}
+          weeklyHours={onboardingState?.data.weeklyHours || null}
+          existingSkills={onboardingState?.data.existingSkills || []}
+          onEdit={handleStep5Edit}
+          onComplete={handleGeneratePath}
+          isLoading={isStepLoading}
+          isEditMode={isEditMode}
         />
       )}
     </OnboardingLayout>

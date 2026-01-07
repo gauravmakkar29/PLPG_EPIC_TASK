@@ -41,11 +41,15 @@ export const step2Schema = z.object({
 });
 
 export const step3Schema = z.object({
-  weeklyHours: z.number().min(1, 'Please select your weekly time commitment').max(40),
+  weeklyHours: z.number().min(5, 'Minimum weekly commitment is 5 hours').max(20, 'Maximum weekly commitment is 20 hours'),
+});
+
+export const step4Schema = z.object({
+  existingSkills: z.array(z.string()).default([]),
 });
 
 export const stepParamsSchema = z.object({
-  step: z.coerce.number().min(1).max(3),
+  step: z.coerce.number().min(1).max(4),
 });
 
 export type OnboardingResponseInput = z.infer<typeof onboardingResponseSchema>;
@@ -56,3 +60,4 @@ export type LearningStyleInput = z.infer<typeof learningStyleSchema>;
 export type Step1Input = z.infer<typeof step1Schema>;
 export type Step2Input = z.infer<typeof step2Schema>;
 export type Step3Input = z.infer<typeof step3Schema>;
+export type Step4Input = z.infer<typeof step4Schema>;

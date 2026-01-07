@@ -48,6 +48,7 @@ export interface OnboardingStateResponse {
     customRole: string | null;
     targetRole: string | null;
     weeklyHours: number | null;
+    existingSkills: string[];
   };
 }
 
@@ -64,9 +65,54 @@ export interface Step3Data {
   weeklyHours: number;
 }
 
-export type OnboardingStepData = Step1Data | Step2Data | Step3Data;
+export interface Step4Data {
+  existingSkills: string[];
+}
 
-export const ONBOARDING_TOTAL_STEPS = 3;
+export type OnboardingStepData = Step1Data | Step2Data | Step3Data | Step4Data;
+
+export const ONBOARDING_TOTAL_STEPS = 5;
+
+// Prerequisite skills that can be skipped during onboarding
+export const PREREQUISITE_SKILLS = [
+  {
+    value: 'python_basics',
+    label: 'Python Basics',
+    description: 'Variables, data types, loops, functions, and basic OOP concepts',
+  },
+  {
+    value: 'linear_algebra',
+    label: 'Linear Algebra',
+    description: 'Vectors, matrices, matrix operations, and transformations',
+  },
+  {
+    value: 'statistics_probability',
+    label: 'Statistics & Probability',
+    description: 'Distributions, hypothesis testing, Bayes theorem, and statistical inference',
+  },
+  {
+    value: 'sql_databases',
+    label: 'SQL/Databases',
+    description: 'SQL queries, joins, aggregations, and basic database concepts',
+  },
+  {
+    value: 'git_version_control',
+    label: 'Git Version Control',
+    description: 'Git basics, branching, merging, and collaborative workflows',
+  },
+  {
+    value: 'data_manipulation',
+    label: 'Data Manipulation (Pandas/NumPy)',
+    description: 'DataFrames, array operations, data cleaning, and transformation',
+  },
+  {
+    value: 'basic_calculus',
+    label: 'Basic Calculus',
+    description: 'Derivatives, gradients, chain rule, and optimization basics',
+  },
+] as const;
+
+export type PrerequisiteSkillValue = typeof PREREQUISITE_SKILLS[number]['value'];
 
 export const CURRENT_ROLES = [
   { value: 'backend_developer', label: 'Backend Developer', description: 'Build server-side applications and APIs' },
