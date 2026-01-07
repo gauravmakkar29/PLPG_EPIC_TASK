@@ -23,10 +23,11 @@ export default function SignUp() {
   }, [isAuthenticated]);
 
   // Redirect if already authenticated
-  if (isAuthenticated) {
-    navigate('/onboarding');
-    return null;
-  }
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/onboarding');
+    }
+  }, [isAuthenticated, navigate]);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();

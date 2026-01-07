@@ -1,4 +1,4 @@
-import { useState, FormEvent } from 'react';
+import { useState, FormEvent, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { track } from '../lib/analytics';
@@ -12,10 +12,11 @@ export default function SignIn() {
   const navigate = useNavigate();
 
   // Redirect if already authenticated
-  if (isAuthenticated) {
-    navigate('/dashboard');
-    return null;
-  }
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/dashboard');
+    }
+  }, [isAuthenticated, navigate]);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();

@@ -6,7 +6,7 @@ import {
   PHASE_LABELS,
   PHASE_DESCRIPTIONS,
   PHASE_ORDER,
-} from '@plpg/shared/constants/phases';
+} from '@plpg/shared/constants';
 
 export interface RoadmapModuleWithProgress {
   id: string;

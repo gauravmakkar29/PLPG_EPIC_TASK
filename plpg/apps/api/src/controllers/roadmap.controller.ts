@@ -10,6 +10,7 @@ import {
 import { prisma } from '../lib/prisma.js';
 import { logger } from '../lib/logger.js';
 import { BadRequestError, NotFoundError } from '@plpg/shared';
+import type { Skill, Phase } from '@plpg/shared';
 
 /**
  * Analyze the gap between user's current skills and target role requirements
@@ -81,7 +82,13 @@ export async function getSequencedSkills(
       },
     });
 
-    const result = sequenceSkills(skills, dependencies);
+    // Cast skills to Skill[] with proper Phase type
+    const typedSkills: Skill[] = skills.map(s => ({
+      ...s,
+      phase: s.phase as Phase
+    }));
+
+    const result = sequenceSkills(typedSkills, dependencies);
 
     res.json({ success: true, data: result });
   } catch (error) {
@@ -101,19 +108,8 @@ export async function createRoadmap(
 ): Promise<void> {
   try {
     const userId = req.user!.id;
-    const { sourceRole, targetRole, title, description } = req.body;
 
-    if (!sourceRole || !targetRole) {
-      throw new BadRequestError('sourceRole and targetRole are required');
-    }
-
-    const result = await generateRoadmap({
-      userId,
-      sourceRole,
-      targetRole,
-      title,
-      description,
-    });
+    const result = await generateRoadmap(userId);
 
     res.status(201).json({ success: true, data: result });
   } catch (error) {
@@ -137,40 +133,14 @@ export async function getRoadmapEndpoint(
 
     const roadmap = await getRoadmap(userId);
 
-    // Serialize Date to ISO string for JSON response
     res.json({
       success: true,
-      data: {
-        ...roadmap,
-        timeline: {
-          ...roadmap.timeline,
-          projectedCompletion: roadmap.timeline.projectedCompletion.toISOString(),
-        },
-        createdAt: roadmap.createdAt.toISOString(),
-        updatedAt: roadmap.updatedAt.toISOString(),
-        phases: roadmap.phases.map((phase) => ({
-          ...phase,
-          modules: phase.modules.map((module) => ({
-            ...module,
-            progress: module.progress
-              ? {
-                  ...module.progress,
-                  startedAt: module.progress.startedAt?.toISOString() ?? null,
-                  completedAt: module.progress.completedAt?.toISOString() ?? null,
-                }
-              : null,
-          })),
-        })),
-      },
+      data: roadmap,
     });
   } catch (error) {
     if (error instanceof NotFoundError) {
-      // Return 404 with a message indicating redirect to onboarding
-      res.status(404).json({
-        success: false,
-        error: error.message,
-        redirectTo: '/onboarding',
-      });
+      // Pass to error handler to format response properly
+      next(error);
       return;
     }
     logger.error({ error, userId: req.user?.id }, 'Error retrieving roadmap');
@@ -206,31 +176,9 @@ export async function getRoadmapById(
     // Use the same retrieval service
     const roadmapData = await getRoadmap(userId);
 
-    // Serialize Date to ISO string for JSON response
     res.json({
       success: true,
-      data: {
-        ...roadmapData,
-        timeline: {
-          ...roadmapData.timeline,
-          projectedCompletion: roadmapData.timeline.projectedCompletion.toISOString(),
-        },
-        createdAt: roadmapData.createdAt.toISOString(),
-        updatedAt: roadmapData.updatedAt.toISOString(),
-        phases: roadmapData.phases.map((phase) => ({
-          ...phase,
-          modules: phase.modules.map((module) => ({
-            ...module,
-            progress: module.progress
-              ? {
-                  ...module.progress,
-                  startedAt: module.progress.startedAt?.toISOString() ?? null,
-                  completedAt: module.progress.completedAt?.toISOString() ?? null,
-                }
-              : null,
-          })),
-        })),
-      },
+      data: roadmapData,
     });
   } catch (error) {
     logger.error({ error, userId: req.user?.id, roadmapId: req.params.id }, 'Error retrieving roadmap by ID');

@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ONBOARDING_TOTAL_STEPS } from '@plpg/shared';
 import OnboardingLayout from '../components/onboarding/OnboardingLayout';
@@ -22,6 +23,21 @@ export default function Onboarding() {
   const restartOnboarding = useRestartOnboarding();
 
   const currentStep = onboardingState?.currentStep || 1;
+
+  // Redirect if onboarding is complete and not in edit mode
+  useEffect(() => {
+    if ((onboardingState?.isComplete || onboardingState?.isSkipped) && !isEditMode) {
+      navigate('/dashboard');
+    }
+  }, [onboardingState?.isComplete, onboardingState?.isSkipped, isEditMode, navigate]);
+
+  // In edit mode, restart onboarding if needed
+  useEffect(() => {
+    if (isEditMode && (onboardingState?.isComplete || onboardingState?.isSkipped) && currentStep === 5 && !restartOnboarding.isPending) {
+      restartOnboarding.mutate();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isEditMode, onboardingState?.isComplete, onboardingState?.isSkipped, currentStep]);
 
   const handleSkip = () => {
     skipOnboarding.mutate(undefined, {
@@ -109,19 +125,6 @@ export default function Onboarding() {
         </div>
       </div>
     );
-  }
-
-  // If onboarding is complete and not in edit mode, redirect to dashboard
-  // In edit mode, allow users to go through onboarding again
-  if ((onboardingState?.isComplete || onboardingState?.isSkipped) && !isEditMode) {
-    navigate('/dashboard');
-    return null;
-  }
-
-  // In edit mode, if onboarding is complete but we just entered, restart it
-  if (isEditMode && (onboardingState?.isComplete || onboardingState?.isSkipped) && currentStep === 5) {
-    // Restart onboarding to step 1 for editing
-    restartOnboarding.mutate();
   }
 
   const isStepLoading = saveStep.isPending || skipOnboarding.isPending || completeOnboarding.isPending || gotoStep.isPending;
