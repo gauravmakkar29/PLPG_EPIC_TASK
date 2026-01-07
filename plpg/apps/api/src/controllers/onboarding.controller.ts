@@ -4,7 +4,7 @@ import { prisma } from '../lib/prisma.js';
 import { logger } from '../lib/logger.js';
 import { BadRequestError } from '@plpg/shared';
 
-const TOTAL_STEPS = 3;
+const TOTAL_STEPS = 4;
 
 /**
  * Get current onboarding state for the authenticated user
@@ -103,6 +103,7 @@ export async function saveStep(
       case 3: {
         const data = req.body as Step3Data;
         updateData.weeklyHours = data.weeklyHours;
+        updateData.currentStep = Math.max(onboardingState.currentStep, 4);
         break;
       }
       default:
@@ -162,6 +163,56 @@ export async function skipOnboarding(
     });
 
     logger.info({ userId }, 'User skipped onboarding');
+
+    const response: OnboardingStateResponse = {
+      currentStep: updatedState.currentStep,
+      totalSteps: TOTAL_STEPS,
+      isComplete: updatedState.isComplete,
+      isSkipped: updatedState.isSkipped,
+      data: {
+        currentRole: updatedState.currentRole,
+        customRole: updatedState.customRole,
+        targetRole: updatedState.targetRole,
+        weeklyHours: updatedState.weeklyHours,
+      },
+    };
+
+    res.json({ success: true, data: response });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
+ * Navigate to a specific step (for edit functionality)
+ */
+export async function gotoStep(
+  req: Request,
+  res: Response<{ success: true; data: OnboardingStateResponse }>,
+  next: NextFunction
+): Promise<void> {
+  try {
+    const userId = req.user!.id;
+    const step = parseInt(req.params.step, 10);
+
+    if (step < 1 || step > TOTAL_STEPS) {
+      throw new BadRequestError('Invalid step number');
+    }
+
+    const onboardingState = await prisma.onboardingState.findUnique({
+      where: { userId },
+    });
+
+    if (!onboardingState) {
+      throw new BadRequestError('Onboarding not started');
+    }
+
+    const updatedState = await prisma.onboardingState.update({
+      where: { userId },
+      data: { currentStep: step },
+    });
+
+    logger.info({ userId, step }, 'Navigated to step');
 
     const response: OnboardingStateResponse = {
       currentStep: updatedState.currentStep,

@@ -4,7 +4,9 @@ import OnboardingLayout from '../components/onboarding/OnboardingLayout';
 import Step1CurrentRole from '../components/onboarding/Step1CurrentRole';
 import Step2TargetRole from '../components/onboarding/Step2TargetRole';
 import Step3WeeklyTime from '../components/onboarding/Step3WeeklyTime';
-import { useOnboardingState, useSaveStep, useSkipOnboarding, useCompleteOnboarding } from '../hooks/useOnboarding';
+import Step4Summary from '../components/onboarding/Step4Summary';
+import { useOnboardingState, useSaveStep, useSkipOnboarding, useCompleteOnboarding, useGotoStep } from '../hooks/useOnboarding';
+import { track } from '../lib/analytics';
 
 export default function Onboarding() {
   const navigate = useNavigate();
@@ -12,6 +14,7 @@ export default function Onboarding() {
   const saveStep = useSaveStep();
   const skipOnboarding = useSkipOnboarding();
   const completeOnboarding = useCompleteOnboarding();
+  const gotoStep = useGotoStep();
 
   const currentStep = onboardingState?.currentStep || 1;
 
@@ -41,19 +44,33 @@ export default function Onboarding() {
     saveStep.mutate({ step: 2, data: { targetRole: onboardingState?.data.targetRole || '' } });
   };
 
-  const handleComplete = (data: { weeklyHours: number }) => {
-    saveStep.mutate(
-      { step: 3, data },
-      {
-        onSuccess: () => {
-          completeOnboarding.mutate(undefined, {
-            onSuccess: () => {
-              navigate('/dashboard');
-            },
-          });
-        },
-      }
-    );
+  const handleStep3Next = (data: { weeklyHours: number }) => {
+    // Save step 3 data and move to step 4 (summary)
+    saveStep.mutate({ step: 3, data });
+  };
+
+  const handleStep4Edit = (step: number) => {
+    // Navigate back to a specific step for editing
+    gotoStep.mutate(step);
+  };
+
+  const handleGeneratePath = () => {
+    // Track analytics event before completing
+    track('onboarding_completed', {
+      currentRole: onboardingState?.data.currentRole,
+      targetRole: onboardingState?.data.targetRole,
+      weeklyHours: onboardingState?.data.weeklyHours,
+    });
+
+    completeOnboarding.mutate(undefined, {
+      onSuccess: () => {
+        track('roadmap_generated', {
+          currentRole: onboardingState?.data.currentRole,
+          targetRole: onboardingState?.data.targetRole,
+        });
+        navigate('/dashboard');
+      },
+    });
   };
 
   if (isLoadingState) {
@@ -73,7 +90,7 @@ export default function Onboarding() {
     return null;
   }
 
-  const isStepLoading = saveStep.isPending || skipOnboarding.isPending || completeOnboarding.isPending;
+  const isStepLoading = saveStep.isPending || skipOnboarding.isPending || completeOnboarding.isPending || gotoStep.isPending;
 
   return (
     <OnboardingLayout
@@ -103,8 +120,20 @@ export default function Onboarding() {
       {currentStep === 3 && (
         <Step3WeeklyTime
           initialValue={onboardingState?.data.weeklyHours || null}
-          onComplete={handleComplete}
+          onComplete={handleStep3Next}
           onBack={handleStep3Back}
+          isLoading={isStepLoading}
+        />
+      )}
+
+      {currentStep === 4 && (
+        <Step4Summary
+          currentRole={onboardingState?.data.currentRole || null}
+          customRole={onboardingState?.data.customRole || null}
+          targetRole={onboardingState?.data.targetRole || null}
+          weeklyHours={onboardingState?.data.weeklyHours || null}
+          onEdit={handleStep4Edit}
+          onComplete={handleGeneratePath}
           isLoading={isStepLoading}
         />
       )}
