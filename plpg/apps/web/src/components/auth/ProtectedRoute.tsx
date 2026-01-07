@@ -1,6 +1,6 @@
 import { ReactNode } from 'react';
 import { Navigate } from 'react-router-dom';
-import { useAuth } from '@clerk/clerk-react';
+import { useAuth } from '../../contexts/AuthContext';
 
 interface ProtectedRouteProps {
   children: ReactNode;
@@ -15,7 +15,7 @@ interface ProtectedRouteProps {
  * ProtectedRoute component that guards routes requiring authentication.
  * 
  * Features:
- * - Checks Clerk authentication state
+ * - Checks JWT authentication state
  * - Shows loading spinner while checking auth
  * - Redirects to /sign-in if not authenticated
  * - Passes through to children if authenticated
@@ -33,15 +33,11 @@ interface ProtectedRouteProps {
  * />
  * ```
  */
-<<<<<<< HEAD
-export default function ProtectedRoute({ children, requireOnboarding: _requireOnboarding = false }: ProtectedRouteProps) {
-=======
 export default function ProtectedRoute({ children }: ProtectedRouteProps) {
->>>>>>> 06ef476c0a79162633c7b8017b3cb9ff185d9f69
-  const { isLoaded, isSignedIn } = useAuth();
+  const { isLoading, isAuthenticated } = useAuth();
 
   // Show loading spinner while checking auth state
-  if (!isLoaded) {
+  if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-primary-50 to-white">
         <div className="flex flex-col items-center gap-4">
@@ -53,7 +49,7 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
   }
 
   // Redirect to sign-in if not authenticated
-  if (!isSignedIn) {
+  if (!isAuthenticated) {
     return <Navigate to="/sign-in" replace />;
   }
 

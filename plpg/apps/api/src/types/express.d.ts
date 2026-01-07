@@ -5,7 +5,6 @@ declare global {
     interface Request {
       user?: {
         id: string;
-        clerkId: string;
         email: string;
         subscriptionStatus: 'free' | 'trial' | 'pro';
         trialEndsAt: Date | null;

@@ -1,10 +1,10 @@
 import type { Request, Response, NextFunction } from 'express';
 import type { Session } from '@plpg/shared';
-import { Webhook } from 'svix';
-import type { WebhookEvent } from '@clerk/backend';
 import { prisma } from '../lib/prisma.js';
 import { logger } from '../lib/logger.js';
-import { env } from '../lib/env.js';
+import { generateToken } from '../lib/jwt.js';
+import bcrypt from 'bcrypt';
+import { z } from 'zod';
 
 /**
  * Get current user session
@@ -48,124 +48,131 @@ export async function getSession(
   }
 }
 
-export async function clerkWebhook(
+// Validation schemas
+const signupSchema = z.object({
+  email: z.string().email(),
+  password: z.string().min(8, 'Password must be at least 8 characters'),
+  name: z.string().optional(),
+});
+
+const loginSchema = z.object({
+  email: z.string().email(),
+  password: z.string(),
+});
+
+/**
+ * User signup
+ * POST /v1/auth/signup
+ */
+export async function signup(
   req: Request,
   res: Response,
   next: NextFunction
 ): Promise<void> {
   try {
-    // Verify webhook signature if CLERK_WEBHOOK_SECRET is configured
-    let evt: WebhookEvent;
-    
-    if (env.CLERK_WEBHOOK_SECRET) {
-      const WEBHOOK_SECRET = env.CLERK_WEBHOOK_SECRET;
-      const wh = new Webhook(WEBHOOK_SECRET);
-      
-      // Get headers
-      const svixId = req.headers['svix-id'] as string;
-      const svixTimestamp = req.headers['svix-timestamp'] as string;
-      const svixSignature = req.headers['svix-signature'] as string;
+    const body = signupSchema.parse(req.body);
+    const { email, password, name } = body;
 
-      if (!svixId || !svixTimestamp || !svixSignature) {
-        logger.warn('Missing svix headers in webhook request');
-        res.status(400).json({ error: 'Invalid signature' });
-        return;
-      }
+    // Check if user already exists
+    const existingUser = await prisma.user.findUnique({
+      where: { email },
+    });
 
-      const headers = {
-        'svix-id': svixId,
-        'svix-timestamp': svixTimestamp,
-        'svix-signature': svixSignature,
-      };
-
-      // Verify signature
-      try {
-        // svix expects the raw body as a string
-        const payload = JSON.stringify(req.body);
-        evt = wh.verify(payload, headers) as WebhookEvent;
-      } catch (err) {
-        logger.warn({ error: err }, 'Invalid webhook signature');
-        res.status(400).json({ error: 'Invalid signature' });
-        return;
-      }
-    } else {
-      // In development, allow webhooks without signature verification
-      // but log a warning
-      logger.warn('CLERK_WEBHOOK_SECRET not configured, skipping signature verification');
-      evt = req.body as WebhookEvent;
+    if (existingUser) {
+      res.status(409).json({ error: 'User with this email already exists' });
+      return;
     }
 
-    logger.info({ type: evt.type }, 'Received Clerk webhook');
+    // Hash password
+    const passwordHash = await bcrypt.hash(password, 10);
 
-    switch (evt.type) {
-      case 'user.created': {
-        const { id, email_addresses, first_name, last_name, image_url } = evt.data;
-        const email = email_addresses[0]?.email_address;
+    // Create user
+    const user = await prisma.user.create({
+      data: {
+        email,
+        passwordHash,
+        name: name || null,
+        trialStartDate: new Date(),
+        trialEndDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000), // 14 days
+      },
+    });
 
-        if (email) {
-          await prisma.user.create({
-            data: {
-              clerkId: id,
-              email,
-              name: [first_name, last_name].filter(Boolean).join(' ') || null,
-              avatarUrl: image_url || null,
-              trialStartDate: new Date(),
-              trialEndDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000), // 14 days
-            },
-          });
+    // Generate JWT token
+    const token = generateToken({
+      userId: user.id,
+      email: user.email,
+    });
 
-          logger.info({ clerkId: id, email }, 'Created new user from Clerk webhook');
-          
-          // Track signup_completed analytics event
-          // Note: Full analytics integration will be added in Epic 9
-          logger.info(
-            { 
-              event: 'signup_completed',
-              clerkId: id,
-              email,
-              timestamp: new Date().toISOString()
-            },
-            'Analytics: signup_completed'
-          );
-        }
-        break;
-      }
+    logger.info({ userId: user.id, email }, 'User signed up');
 
-      case 'user.updated': {
-        const { id, email_addresses, first_name, last_name, image_url } = evt.data;
-        const email = email_addresses[0]?.email_address;
-
-        await prisma.user.update({
-          where: { clerkId: id },
-          data: {
-            email,
-            name: [first_name, last_name].filter(Boolean).join(' ') || null,
-            avatarUrl: image_url || null,
-          },
-        });
-
-        logger.info({ clerkId: id }, 'Updated user from Clerk webhook');
-        break;
-      }
-
-      case 'user.deleted': {
-        const { id } = evt.data;
-
-        await prisma.user.delete({
-          where: { clerkId: id },
-        });
-
-        logger.info({ clerkId: id }, 'Deleted user from Clerk webhook');
-        break;
-      }
-
-      default:
-        logger.debug({ type: evt.type }, 'Unhandled webhook event type');
-    }
-
-    res.status(200).json({ received: true });
+    res.status(201).json({
+      token,
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+      },
+    });
   } catch (error) {
-    logger.error({ error }, 'Error processing Clerk webhook');
+    if (error instanceof z.ZodError) {
+      res.status(400).json({ error: 'Invalid input', details: error.errors });
+      return;
+    }
+    next(error);
+  }
+}
+
+/**
+ * User login
+ * POST /v1/auth/login
+ */
+export async function login(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    const body = loginSchema.parse(req.body);
+    const { email, password } = body;
+
+    // Find user
+    const user = await prisma.user.findUnique({
+      where: { email },
+    });
+
+    if (!user) {
+      res.status(401).json({ error: 'Invalid email or password' });
+      return;
+    }
+
+    // Verify password
+    const isValidPassword = await bcrypt.compare(password, user.passwordHash);
+    if (!isValidPassword) {
+      res.status(401).json({ error: 'Invalid email or password' });
+      return;
+    }
+
+    // Generate JWT token
+    const token = generateToken({
+      userId: user.id,
+      email: user.email,
+    });
+
+    logger.info({ userId: user.id, email }, 'User logged in');
+
+    res.json({
+      token,
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+      },
+    });
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      res.status(400).json({ error: 'Invalid input', details: error.errors });
+      return;
+    }
     next(error);
   }
 }

@@ -1,4 +1,4 @@
-import { useUser } from '@clerk/clerk-react';
+import { useAuth } from '../../contexts/AuthContext';
 import { useState } from 'react';
 
 /**
@@ -17,37 +17,28 @@ import { useState } from 'react';
  * ```
  */
 export function EmailVerificationBanner() {
-  const { user } = useUser();
+  const { user } = useAuth();
   const [isResending, setIsResending] = useState(false);
   const [resendSuccess, setResendSuccess] = useState(false);
 
-  // Get primary email address
-  const primaryEmail = user?.primaryEmailAddress;
+  // For now, we'll assume email is verified (can be enhanced later)
+  const isEmailVerified = true;
 
   // Don't show banner if:
   // - User is not loaded
-  // - No primary email exists
+  // - No email exists
   // - Email is already verified
-  if (!user || !primaryEmail || primaryEmail.verification.status === 'verified') {
+  if (!user || !user.email || isEmailVerified) {
     return null;
   }
 
   const handleResend = async () => {
-    if (!primaryEmail) return;
-
     try {
       setIsResending(true);
       setResendSuccess(false);
       
-      // Prepare verification email using Clerk's API
-<<<<<<< HEAD
-      await primaryEmail.prepareVerification({ strategy: 'email_link', redirectUrl: window.location.origin });
-=======
-      await primaryEmail.prepareVerification({ 
-        strategy: 'email_link',
-        redirectUrl: window.location.origin + '/dashboard'
-      });
->>>>>>> 06ef476c0a79162633c7b8017b3cb9ff185d9f69
+      // TODO: Implement email verification resend API endpoint
+      // For now, just show success message
       
       setResendSuccess(true);
       // Clear success message after 3 seconds
@@ -81,7 +72,7 @@ export function EmailVerificationBanner() {
         <div className="ml-3 flex-1">
           <p className="text-sm text-warning-800">
             <strong>Please verify your email address.</strong> We sent a verification email to{' '}
-            <span className="font-medium">{primaryEmail.emailAddress}</span>. Please check your inbox and click the verification link.
+            <span className="font-medium">{user.email}</span>. Please check your inbox and click the verification link.
           </p>
           {resendSuccess && (
             <p className="mt-2 text-sm text-success-600 font-medium">

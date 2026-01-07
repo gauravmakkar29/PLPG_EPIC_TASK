@@ -13,8 +13,8 @@
     "test:coverage": "vitest --coverage"
   },
   "dependencies": {
-    "@clerk/backend": "^2.29.0",
-    "@clerk/express": "^0.0.15",
+    "jsonwebtoken": "^9.0.2",
+    "bcrypt": "^5.1.1",
     "@plpg/shared": "workspace:*",
     "@prisma/client": "^5.9.1",
     "cors": "^2.8.5",
@@ -24,13 +24,14 @@
     "helmet": "^7.1.0",
     "pino": "^8.18.0",
     "pino-http": "^9.0.0",
-    "svix": "^1.38.0",
     "zod": "^3.22.4"
   },
   "devDependencies": {
     "@plpg/config": "workspace:*",
     "@types/cors": "^2.8.17",
     "@types/express": "^4.17.21",
+    "@types/jsonwebtoken": "^9.0.5",
+    "@types/bcrypt": "^5.0.2",
     "@types/node": "^20.11.5",
     "pino-pretty": "^10.3.1",
     "tsx": "^4.7.0",

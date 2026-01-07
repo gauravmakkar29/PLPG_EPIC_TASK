@@ -11,8 +11,11 @@ export const api = axios.create({
 // Request interceptor for auth token
 api.interceptors.request.use(
   async (config) => {
-    // Token injection will be handled by Clerk's useAuth hook
-    // For now, we rely on cookies/session
+    // Get token from localStorage and add to Authorization header
+    const token = localStorage.getItem('auth_token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
     return config;
   },
   (error) => {
@@ -25,8 +28,9 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      // Handle unauthorized - redirect to login
-      window.location.href = '/';
+      // Handle unauthorized - clear token and redirect to login
+      localStorage.removeItem('auth_token');
+      window.location.href = '/sign-in';
     }
 
     if (error.response?.status === 403) {

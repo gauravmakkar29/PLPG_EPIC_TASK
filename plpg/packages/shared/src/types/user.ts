@@ -2,8 +2,8 @@ import type { SubscriptionPlan } from '../constants/subscription.js';
 
 export interface User {
   id: string;
-  clerkId: string;
   email: string;
+  passwordHash: string;
   name: string | null;
   avatarUrl: string | null;
   trialStartDate: Date | null;

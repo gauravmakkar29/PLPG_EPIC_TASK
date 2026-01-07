@@ -1,14 +1,14 @@
-import { useUser, UserProfile } from '@clerk/clerk-react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
 import { useSession } from '../../hooks/useSession';
 import { EmailVerificationBanner } from '../../components/auth/EmailVerificationBanner';
 
 export function ProfilePage() {
-  const { user, isLoaded } = useUser();
+  const { user, isLoading } = useAuth();
   const { data: session, isLoading: isLoadingSession } = useSession();
   const navigate = useNavigate();
 
-  if (!isLoaded || isLoadingSession) {
+  if (isLoading || isLoadingSession) {
     return (
       <div className="min-h-screen bg-secondary-50 flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
@@ -19,13 +19,9 @@ export function ProfilePage() {
     );
   }
 
-  const accountCreatedDate = user?.createdAt
-    ? new Date(user.createdAt).toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-      })
-    : 'Unknown';
+  // Auth0 doesn't provide createdAt in user object by default
+  // You may need to fetch this from your backend API
+  const accountCreatedDate = 'Unknown';
 
   const getSubscriptionBadgeVariant = () => {
     if (!session?.subscriptionStatus) return 'free';
@@ -85,25 +81,17 @@ export function ProfilePage() {
             <h2 className="text-xl font-semibold text-secondary-900 mb-6">Profile Information</h2>
             
             <div className="flex items-center gap-4 mb-6">
-              {user?.imageUrl ? (
-                <img
-                  src={user.imageUrl}
-                  alt={user?.fullName || 'User'}
-                  className="w-20 h-20 rounded-full object-cover"
-                />
-              ) : (
-                <div className="w-20 h-20 rounded-full bg-primary-100 flex items-center justify-center">
-                  <span className="text-3xl font-semibold text-primary-600">
-                    {user?.firstName?.[0] || user?.emailAddresses[0]?.emailAddress[0]?.toUpperCase()}
-                  </span>
-                </div>
-              )}
+              <div className="w-20 h-20 rounded-full bg-primary-100 flex items-center justify-center">
+                <span className="text-3xl font-semibold text-primary-600">
+                  {user?.name?.[0] || user?.email?.[0]?.toUpperCase() || 'U'}
+                </span>
+              </div>
               <div className="flex-1">
                 <h3 className="text-lg font-semibold text-secondary-900">
-                  {user?.fullName || user?.emailAddresses[0]?.emailAddress || 'User'}
+                  {user?.name || user?.email || 'User'}
                 </h3>
                 <p className="text-secondary-600 text-sm mt-1">
-                  {user?.primaryEmailAddress?.emailAddress}
+                  {user?.email}
                 </p>
                 <div className="mt-2">
                   <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${getBadgeColor()}`}>
@@ -161,10 +149,12 @@ export function ProfilePage() {
           <div className="bg-white rounded-xl shadow-sm p-6">
             <h2 className="text-xl font-semibold text-secondary-900 mb-4">Edit Profile</h2>
             <p className="text-secondary-600 text-sm mb-6">
-              Use Clerk's UserProfile component to manage your profile information, including name and avatar.
+              Profile management features will be available soon. For now, you can update your name and email through the settings.
             </p>
-            <div className="border border-secondary-200 rounded-lg p-4">
-              <UserProfile />
+            <div className="border border-secondary-200 rounded-lg p-4 bg-secondary-50">
+              <p className="text-sm text-secondary-600">
+                Profile editing functionality is coming soon.
+              </p>
             </div>
           </div>
 

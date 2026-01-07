@@ -91,11 +91,12 @@ function DevDashboard() {
           <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-6">
             <h3 className="text-lg font-semibold text-yellow-800 mb-2">Development Mode</h3>
             <p className="text-yellow-700">
-              Running without Clerk authentication. To enable full features, add your Clerk keys to the .env file:
+              Running in development mode. Authentication uses JWT tokens stored in localStorage.
             </p>
             <pre className="mt-2 bg-yellow-100 p-3 rounded text-sm text-yellow-900 overflow-x-auto">
-{`VITE_CLERK_PUBLISHABLE_KEY="pk_test_your_key_here"
-CLERK_SECRET_KEY="sk_test_your_key_here"`}
+{`The application uses custom JWT authentication.
+No external auth provider is required.
+Users can sign up and log in directly.`}
             </pre>
           </div>
 
