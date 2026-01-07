@@ -78,12 +78,59 @@ export const CURRENT_ROLES = [
 ] as const;
 
 export const TARGET_ROLES = [
-  { value: 'frontend_developer', label: 'Frontend Developer', description: 'Build user interfaces and web apps' },
-  { value: 'backend_developer', label: 'Backend Developer', description: 'Build server-side applications and APIs' },
-  { value: 'fullstack_developer', label: 'Full Stack Developer', description: 'Work on both frontend and backend' },
-  { value: 'devops_engineer', label: 'DevOps Engineer', description: 'Manage infrastructure and deployments' },
-  { value: 'data_engineer', label: 'Data Engineer', description: 'Build data pipelines and systems' },
-  { value: 'ml_engineer', label: 'ML Engineer', description: 'Build machine learning systems' },
+  {
+    value: 'ml_engineer',
+    label: 'ML Engineer',
+    description: 'Build machine learning systems and deploy AI models to production',
+    isAvailable: true,
+    estimatedHours: 200,
+    outcomes: [
+      'Build and deploy ML models',
+      'Design data pipelines for ML',
+      'Implement MLOps best practices',
+      'Work with popular ML frameworks',
+    ],
+  },
+  {
+    value: 'frontend_developer',
+    label: 'Frontend Developer',
+    description: 'Build user interfaces and web apps',
+    isAvailable: false,
+    estimatedHours: null,
+    outcomes: null,
+  },
+  {
+    value: 'backend_developer',
+    label: 'Backend Developer',
+    description: 'Build server-side applications and APIs',
+    isAvailable: false,
+    estimatedHours: null,
+    outcomes: null,
+  },
+  {
+    value: 'fullstack_developer',
+    label: 'Full Stack Developer',
+    description: 'Work on both frontend and backend',
+    isAvailable: false,
+    estimatedHours: null,
+    outcomes: null,
+  },
+  {
+    value: 'devops_engineer',
+    label: 'DevOps Engineer',
+    description: 'Manage infrastructure and deployments',
+    isAvailable: false,
+    estimatedHours: null,
+    outcomes: null,
+  },
+  {
+    value: 'data_engineer',
+    label: 'Data Engineer',
+    description: 'Build data pipelines and systems',
+    isAvailable: false,
+    estimatedHours: null,
+    outcomes: null,
+  },
 ] as const;
 
 export const WEEKLY_HOURS_OPTIONS = [
