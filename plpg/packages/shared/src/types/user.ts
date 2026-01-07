@@ -1,3 +1,5 @@
+import type { SubscriptionPlan } from '../constants/subscription';
+
 export interface User {
   id: string;
   clerkId: string;
@@ -38,5 +40,3 @@ export type SubscriptionStatus =
   | 'past_due'
   | 'trialing'
   | 'unpaid';
-
-export type SubscriptionPlan = 'free' | 'pro';

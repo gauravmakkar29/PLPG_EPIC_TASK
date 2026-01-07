@@ -1,5 +1,6 @@
 import type { Phase } from '../constants/phases';
 import type { Skill } from './skill';
+import type { Progress } from './progress';
 
 export interface Roadmap {
   id: string;
