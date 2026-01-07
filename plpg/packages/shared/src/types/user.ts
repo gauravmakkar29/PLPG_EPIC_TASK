@@ -41,4 +41,4 @@ export type SubscriptionStatus =
   | 'trialing'
   | 'unpaid';
 
-export type SubscriptionPlan = 'free' | 'pro';
+// Note: SubscriptionPlan type is exported from constants/subscription.ts

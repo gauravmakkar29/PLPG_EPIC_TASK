@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { CURRENT_ROLES, TARGET_ROLES, WEEKLY_HOURS_OPTIONS } from '@plpg/shared';
 import { cn } from '../../lib/utils';
 
@@ -9,6 +10,7 @@ interface Step4SummaryProps {
   onEdit: (step: number) => void;
   onComplete: () => void;
   isLoading?: boolean;
+  isEditMode?: boolean;
 }
 
 export default function Step4Summary({
@@ -19,7 +21,9 @@ export default function Step4Summary({
   onEdit,
   onComplete,
   isLoading = false,
+  isEditMode = false,
 }: Step4SummaryProps) {
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const currentRoleData = CURRENT_ROLES.find((r) => r.value === currentRole);
   const targetRoleData = TARGET_ROLES.find((r) => r.value === targetRole);
   const weeklyHoursData = WEEKLY_HOURS_OPTIONS.find((h) => h.value === weeklyHours);
@@ -158,11 +162,46 @@ export default function Step4Summary({
             </div>
           </div>
         </div>
+
+        {/* Warning message for edit mode */}
+        {isEditMode && (
+          <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+            <div className="flex gap-3">
+              <svg
+                className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                />
+              </svg>
+              <div>
+                <p className="text-sm font-medium text-amber-800">
+                  Changing preferences will regenerate your roadmap
+                </p>
+                <p className="text-sm text-amber-700 mt-1">
+                  Your progress on matching skills will be preserved, but you'll receive a new personalized learning path.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="pt-4">
         <button
-          onClick={onComplete}
+          onClick={() => {
+            if (isEditMode) {
+              setShowConfirmDialog(true);
+            } else {
+              onComplete();
+            }
+          }}
           disabled={isLoading}
           className={cn(
             'w-full py-4 px-6 rounded-xl font-semibold text-white text-lg transition-all duration-200',
@@ -177,16 +216,71 @@ export default function Step4Summary({
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
               </svg>
-              Generating Your Path...
+              {isEditMode ? 'Updating Your Path...' : 'Generating Your Path...'}
             </span>
           ) : (
-            'Generate My Path'
+            isEditMode ? 'Update My Path' : 'Generate My Path'
           )}
         </button>
         <p className="text-center text-sm text-secondary-500 mt-3">
-          This will create your personalized learning roadmap
+          {isEditMode
+            ? 'This will regenerate your personalized learning roadmap'
+            : 'This will create your personalized learning roadmap'}
         </p>
       </div>
+
+      {/* Confirmation Dialog for Edit Mode */}
+      {showConfirmDialog && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full mx-4 p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center">
+                <svg
+                  className="w-6 h-6 text-amber-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                  />
+                </svg>
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-secondary-900">Confirm Roadmap Regeneration</h3>
+              </div>
+            </div>
+
+            <p className="text-secondary-600 mb-6">
+              Are you sure you want to update your preferences? This will generate a new personalized learning path.
+              <span className="block mt-2 text-sm text-green-600 font-medium">
+                Your progress on matching skills will be preserved.
+              </span>
+            </p>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowConfirmDialog(false)}
+                className="flex-1 py-3 px-4 rounded-lg border border-secondary-300 text-secondary-700 font-medium hover:bg-secondary-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  setShowConfirmDialog(false);
+                  onComplete();
+                }}
+                className="flex-1 py-3 px-4 rounded-lg bg-primary-600 text-white font-medium hover:bg-primary-700 transition-colors"
+              >
+                Confirm Update
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

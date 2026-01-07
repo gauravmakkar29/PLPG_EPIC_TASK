@@ -1,20 +1,24 @@
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ONBOARDING_TOTAL_STEPS } from '@plpg/shared';
 import OnboardingLayout from '../components/onboarding/OnboardingLayout';
 import Step1CurrentRole from '../components/onboarding/Step1CurrentRole';
 import Step2TargetRole from '../components/onboarding/Step2TargetRole';
 import Step3WeeklyTime from '../components/onboarding/Step3WeeklyTime';
 import Step4Summary from '../components/onboarding/Step4Summary';
-import { useOnboardingState, useSaveStep, useSkipOnboarding, useCompleteOnboarding, useGotoStep } from '../hooks/useOnboarding';
+import { useOnboardingState, useSaveStep, useSkipOnboarding, useCompleteOnboarding, useGotoStep, useRestartOnboarding } from '../hooks/useOnboarding';
 import { track } from '../lib/analytics';
 
 export default function Onboarding() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const isEditMode = searchParams.get('edit') === 'true';
+
   const { data: onboardingState, isLoading: isLoadingState } = useOnboardingState();
   const saveStep = useSaveStep();
   const skipOnboarding = useSkipOnboarding();
   const completeOnboarding = useCompleteOnboarding();
   const gotoStep = useGotoStep();
+  const restartOnboarding = useRestartOnboarding();
 
   const currentStep = onboardingState?.currentStep || 1;
 
@@ -56,17 +60,27 @@ export default function Onboarding() {
 
   const handleGeneratePath = () => {
     // Track analytics event before completing
-    track('onboarding_completed', {
-      currentRole: onboardingState?.data.currentRole,
-      targetRole: onboardingState?.data.targetRole,
-      weeklyHours: onboardingState?.data.weeklyHours,
-    });
+    if (isEditMode) {
+      track('preferences_updated', {
+        currentRole: onboardingState?.data.currentRole,
+        targetRole: onboardingState?.data.targetRole,
+        weeklyHours: onboardingState?.data.weeklyHours,
+        isReOnboarding: true,
+      });
+    } else {
+      track('onboarding_completed', {
+        currentRole: onboardingState?.data.currentRole,
+        targetRole: onboardingState?.data.targetRole,
+        weeklyHours: onboardingState?.data.weeklyHours,
+      });
+    }
 
     completeOnboarding.mutate(undefined, {
       onSuccess: () => {
         track('roadmap_generated', {
           currentRole: onboardingState?.data.currentRole,
           targetRole: onboardingState?.data.targetRole,
+          isReOnboarding: isEditMode,
         });
         navigate('/dashboard');
       },
@@ -84,10 +98,17 @@ export default function Onboarding() {
     );
   }
 
-  // If onboarding is complete, redirect to dashboard
-  if (onboardingState?.isComplete || onboardingState?.isSkipped) {
+  // If onboarding is complete and not in edit mode, redirect to dashboard
+  // In edit mode, allow users to go through onboarding again
+  if ((onboardingState?.isComplete || onboardingState?.isSkipped) && !isEditMode) {
     navigate('/dashboard');
     return null;
+  }
+
+  // In edit mode, if onboarding is complete but we just entered, restart it
+  if (isEditMode && (onboardingState?.isComplete || onboardingState?.isSkipped) && currentStep === 4) {
+    // Restart onboarding to step 1 for editing
+    restartOnboarding.mutate();
   }
 
   const isStepLoading = saveStep.isPending || skipOnboarding.isPending || completeOnboarding.isPending || gotoStep.isPending;
@@ -135,6 +156,7 @@ export default function Onboarding() {
           onEdit={handleStep4Edit}
           onComplete={handleGeneratePath}
           isLoading={isStepLoading}
+          isEditMode={isEditMode}
         />
       )}
     </OnboardingLayout>

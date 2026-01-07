@@ -5,6 +5,7 @@ import {
   gotoStep,
   skipOnboarding,
   completeOnboarding,
+  restartOnboarding,
 } from '../controllers/onboarding.controller.js';
 import { requireAuth } from '../middleware/auth.middleware.js';
 import { validate } from '../middleware/validate.middleware.js';
@@ -51,6 +52,9 @@ router.post('/goto/:step', validate({ params: stepParamsSchema }), gotoStep);
 
 // Skip onboarding
 router.post('/skip', skipOnboarding);
+
+// Restart onboarding for edit preferences
+router.post('/restart', restartOnboarding);
 
 // Complete onboarding
 router.post('/complete', completeOnboarding);

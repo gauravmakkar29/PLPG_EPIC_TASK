@@ -234,6 +234,60 @@ export async function gotoStep(
 }
 
 /**
+ * Restart onboarding for edit preferences flow
+ * Resets currentStep to 1 and isComplete/isSkipped to false while preserving data
+ */
+export async function restartOnboarding(
+  req: Request,
+  res: Response<{ success: true; data: OnboardingStateResponse }>,
+  next: NextFunction
+): Promise<void> {
+  try {
+    const userId = req.user!.id;
+
+    const onboardingState = await prisma.onboardingState.findUnique({
+      where: { userId },
+    });
+
+    if (!onboardingState) {
+      throw new BadRequestError('Onboarding not started');
+    }
+
+    // Store the previous onboarding response for versioning (if needed in the future)
+    // This preserves history while allowing re-onboarding
+    const updatedState = await prisma.onboardingState.update({
+      where: { userId },
+      data: {
+        currentStep: 1,
+        isComplete: false,
+        isSkipped: false,
+        // Keep existing data for pre-filling forms
+        // currentRole, customRole, targetRole, weeklyHours remain unchanged
+      },
+    });
+
+    logger.info({ userId }, 'User restarted onboarding for preferences update');
+
+    const response: OnboardingStateResponse = {
+      currentStep: updatedState.currentStep,
+      totalSteps: TOTAL_STEPS,
+      isComplete: updatedState.isComplete,
+      isSkipped: updatedState.isSkipped,
+      data: {
+        currentRole: updatedState.currentRole,
+        customRole: updatedState.customRole,
+        targetRole: updatedState.targetRole,
+        weeklyHours: updatedState.weeklyHours,
+      },
+    };
+
+    res.json({ success: true, data: response });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
  * Complete onboarding and trigger roadmap generation
  */
 export async function completeOnboarding(
