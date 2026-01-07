@@ -1,6 +1,12 @@
 import { prisma } from '../lib/prisma.js';
 import { logger } from '../lib/logger.js';
 import { NotFoundError } from '@plpg/shared/errors';
+import {
+  Phase,
+  PHASE_LABELS,
+  PHASE_DESCRIPTIONS,
+  PHASE_ORDER,
+} from '@plpg/shared/constants/phases';
 
 export interface RoadmapModuleWithProgress {
   id: string;
@@ -35,8 +41,13 @@ export interface RoadmapModuleWithProgress {
   } | null;
 }
 
+export type PhaseStatus = 'current' | 'completed' | 'locked';
+
 export interface RoadmapPhase {
   phase: string;
+  name: string;
+  description: string;
+  status: PhaseStatus;
   modules: RoadmapModuleWithProgress[];
   totalHours: number;
   completedHours: number;
@@ -213,12 +224,103 @@ export async function getRoadmap(userId: string): Promise<RoadmapResponse> {
     });
   }
 
-  // Sort phases by typical order (foundation -> intermediate -> advanced)
-  const phaseOrder = ['foundation', 'intermediate', 'advanced', 'core_ml', 'deep_learning'];
+  // Helper function to get phase metadata
+  const getPhaseMetadata = (phaseKey: string): { name: string; description: string } => {
+    // Support both old and new phase names for backward compatibility
+    const phaseMap: Record<string, { name: string; description: string }> = {
+      foundation: {
+        name: PHASE_LABELS[Phase.FOUNDATION],
+        description: PHASE_DESCRIPTIONS[Phase.FOUNDATION],
+      },
+      core_ml: {
+        name: PHASE_LABELS[Phase.CORE_ML],
+        description: PHASE_DESCRIPTIONS[Phase.CORE_ML],
+      },
+      deep_learning: {
+        name: PHASE_LABELS[Phase.DEEP_LEARNING],
+        description: PHASE_DESCRIPTIONS[Phase.DEEP_LEARNING],
+      },
+      // Legacy phase names for backward compatibility
+      intermediate: {
+        name: PHASE_LABELS[Phase.CORE_ML],
+        description: PHASE_DESCRIPTIONS[Phase.CORE_ML],
+      },
+      advanced: {
+        name: PHASE_LABELS[Phase.DEEP_LEARNING],
+        description: PHASE_DESCRIPTIONS[Phase.DEEP_LEARNING],
+      },
+    };
+
+    return (
+      phaseMap[phaseKey] || {
+        name: phaseKey.charAt(0).toUpperCase() + phaseKey.slice(1).replace(/_/g, ' '),
+        description: `Phase: ${phaseKey}`,
+      }
+    );
+  };
+
+  // Calculate phase status for each phase
+  const calculatePhaseStatus = (
+    phaseKey: string,
+    phaseIndex: number,
+    allPhases: Array<{ phase: string; completedModules: number; totalModules: number }>
+  ): PhaseStatus => {
+    const currentPhase = allPhases[phaseIndex];
+    const isCompleted = currentPhase.completedModules === currentPhase.totalModules && currentPhase.totalModules > 0;
+
+    if (isCompleted) {
+      return 'completed';
+    }
+
+    // Check if this is the current phase (first incomplete phase)
+    const hasIncompleteBefore = allPhases
+      .slice(0, phaseIndex)
+      .some((p) => p.completedModules < p.totalModules || p.totalModules === 0);
+
+    if (!hasIncompleteBefore && (currentPhase.completedModules < currentPhase.totalModules || currentPhase.totalModules === 0)) {
+      return 'current';
+    }
+
+    // Check if previous phases are completed (unlock condition)
+    const previousPhasesCompleted = allPhases
+      .slice(0, phaseIndex)
+      .every((p) => p.completedModules === p.totalModules && p.totalModules > 0);
+
+    if (!previousPhasesCompleted && phaseIndex > 0) {
+      return 'locked';
+    }
+
+    // If no previous phases or all previous are completed, it's current
+    return 'current';
+  };
+
+  // Sort phases by typical order
+  const phaseOrderMap: Record<string, number> = {
+    foundation: 0,
+    core_ml: 1,
+    deep_learning: 2,
+    // Legacy support
+    intermediate: 1,
+    advanced: 2,
+  };
+
   phases.sort((a, b) => {
-    const aIndex = phaseOrder.indexOf(a.phase) !== -1 ? phaseOrder.indexOf(a.phase) : 999;
-    const bIndex = phaseOrder.indexOf(b.phase) !== -1 ? phaseOrder.indexOf(b.phase) : 999;
+    const aIndex = phaseOrderMap[a.phase] ?? 999;
+    const bIndex = phaseOrderMap[b.phase] ?? 999;
     return aIndex - bIndex;
+  });
+
+  // Add metadata and status to each phase
+  const phasesWithMetadata = phases.map((phase, index) => {
+    const metadata = getPhaseMetadata(phase.phase);
+    const status = calculatePhaseStatus(phase.phase, index, phases);
+
+    return {
+      ...phase,
+      name: metadata.name,
+      description: metadata.description,
+      status,
+    };
   });
 
   // Calculate overall progress
@@ -253,8 +355,10 @@ export async function getRoadmap(userId: string): Promise<RoadmapResponse> {
     remainingHours,
   };
 
-  // Calculate timeline
-  const projectedCompletion = calculateProjectedCompletion(remainingHours, weeklyHours);
+  // Calculate timeline - use stored completion date if available, otherwise calculate
+  const projectedCompletion = roadmap.projectedCompletionDate 
+    ? roadmap.projectedCompletionDate 
+    : calculateProjectedCompletion(remainingHours, weeklyHours);
 
   const timeline: RoadmapTimeline = {
     totalHours,
@@ -280,7 +384,7 @@ export async function getRoadmap(userId: string): Promise<RoadmapResponse> {
     description: roadmap.description,
     sourceRole: roadmap.sourceRole,
     targetRole: roadmap.targetRole,
-    phases,
+    phases: phasesWithMetadata,
     progress,
     timeline,
     createdAt: roadmap.createdAt,

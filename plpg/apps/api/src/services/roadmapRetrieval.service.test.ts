@@ -579,5 +579,906 @@ describe('Roadmap Retrieval Service', () => {
     expect(result.phases[1].phase).toBe('intermediate');
     expect(result.phases[2].phase).toBe('advanced');
   });
+
+  describe('Phase Organization - Story 3.5', () => {
+    it('test_roadmap_has_three_phases: should return exactly 3 phases for Backend Dev → ML Engineer roadmap', async () => {
+      const userId = 'user-1';
+      const mockRoadmap = {
+        id: 'roadmap-1',
+        userId,
+        title: 'Backend Dev to ML Engineer',
+        description: 'Test Description',
+        sourceRole: 'backend_dev',
+        targetRole: 'ml_engineer',
+        totalEstimatedHours: 150,
+        completedHours: 0,
+        isActive: true,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        modules: [
+          {
+            id: 'module-1',
+            skillId: 'skill-1',
+            phase: 'foundation',
+            sequenceOrder: 1,
+            isLocked: false,
+            isSkipped: false,
+            skill: {
+              id: 'skill-1',
+              name: 'Python Basics',
+              slug: 'python-basics',
+              description: 'Learn Python',
+              phase: 'foundation',
+              estimatedHours: 20,
+              resources: [],
+            },
+            progress: [],
+          },
+          {
+            id: 'module-2',
+            skillId: 'skill-2',
+            phase: 'core_ml',
+            sequenceOrder: 2,
+            isLocked: false,
+            isSkipped: false,
+            skill: {
+              id: 'skill-2',
+              name: 'ML Algorithms',
+              slug: 'ml-algorithms',
+              description: 'Learn ML',
+              phase: 'core_ml',
+              estimatedHours: 30,
+              resources: [],
+            },
+            progress: [],
+          },
+          {
+            id: 'module-3',
+            skillId: 'skill-3',
+            phase: 'deep_learning',
+            sequenceOrder: 3,
+            isLocked: false,
+            isSkipped: false,
+            skill: {
+              id: 'skill-3',
+              name: 'Neural Networks',
+              slug: 'neural-networks',
+              description: 'Learn Deep Learning',
+              phase: 'deep_learning',
+              estimatedHours: 40,
+              resources: [],
+            },
+            progress: [],
+          },
+        ],
+      };
+
+      vi.mocked(prisma.roadmap.findFirst).mockResolvedValue(mockRoadmap as any);
+      vi.mocked(prisma.onboardingState.findUnique).mockResolvedValue({
+        weeklyHours: 10,
+      } as any);
+
+      const result = await getRoadmap(userId);
+
+      expect(result.phases).toHaveLength(3);
+    });
+
+    it('test_phase_names_correct: should return correct phase names [Foundation, Core ML, Deep Learning]', async () => {
+      const userId = 'user-1';
+      const mockRoadmap = {
+        id: 'roadmap-1',
+        userId,
+        title: 'Test Roadmap',
+        description: 'Test Description',
+        sourceRole: 'backend_dev',
+        targetRole: 'ml_engineer',
+        totalEstimatedHours: 150,
+        completedHours: 0,
+        isActive: true,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        modules: [
+          {
+            id: 'module-1',
+            skillId: 'skill-1',
+            phase: 'foundation',
+            sequenceOrder: 1,
+            isLocked: false,
+            isSkipped: false,
+            skill: {
+              id: 'skill-1',
+              name: 'Python Basics',
+              slug: 'python-basics',
+              description: 'Learn Python',
+              phase: 'foundation',
+              estimatedHours: 20,
+              resources: [],
+            },
+            progress: [],
+          },
+          {
+            id: 'module-2',
+            skillId: 'skill-2',
+            phase: 'core_ml',
+            sequenceOrder: 2,
+            isLocked: false,
+            isSkipped: false,
+            skill: {
+              id: 'skill-2',
+              name: 'ML Algorithms',
+              slug: 'ml-algorithms',
+              description: 'Learn ML',
+              phase: 'core_ml',
+              estimatedHours: 30,
+              resources: [],
+            },
+            progress: [],
+          },
+          {
+            id: 'module-3',
+            skillId: 'skill-3',
+            phase: 'deep_learning',
+            sequenceOrder: 3,
+            isLocked: false,
+            isSkipped: false,
+            skill: {
+              id: 'skill-3',
+              name: 'Neural Networks',
+              slug: 'neural-networks',
+              description: 'Learn Deep Learning',
+              phase: 'deep_learning',
+              estimatedHours: 40,
+              resources: [],
+            },
+            progress: [],
+          },
+        ],
+      };
+
+      vi.mocked(prisma.roadmap.findFirst).mockResolvedValue(mockRoadmap as any);
+      vi.mocked(prisma.onboardingState.findUnique).mockResolvedValue({
+        weeklyHours: 10,
+      } as any);
+
+      const result = await getRoadmap(userId);
+
+      const phaseNames = result.phases.map((p) => p.name);
+      expect(phaseNames).toContain('Foundation');
+      expect(phaseNames).toContain('Core ML');
+      expect(phaseNames).toContain('Deep Learning');
+    });
+
+    it('test_phase_descriptions_present: should return non-empty description for each phase', async () => {
+      const userId = 'user-1';
+      const mockRoadmap = {
+        id: 'roadmap-1',
+        userId,
+        title: 'Test Roadmap',
+        description: 'Test Description',
+        sourceRole: 'backend_dev',
+        targetRole: 'ml_engineer',
+        totalEstimatedHours: 150,
+        completedHours: 0,
+        isActive: true,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        modules: [
+          {
+            id: 'module-1',
+            skillId: 'skill-1',
+            phase: 'foundation',
+            sequenceOrder: 1,
+            isLocked: false,
+            isSkipped: false,
+            skill: {
+              id: 'skill-1',
+              name: 'Python Basics',
+              slug: 'python-basics',
+              description: 'Learn Python',
+              phase: 'foundation',
+              estimatedHours: 20,
+              resources: [],
+            },
+            progress: [],
+          },
+          {
+            id: 'module-2',
+            skillId: 'skill-2',
+            phase: 'core_ml',
+            sequenceOrder: 2,
+            isLocked: false,
+            isSkipped: false,
+            skill: {
+              id: 'skill-2',
+              name: 'ML Algorithms',
+              slug: 'ml-algorithms',
+              description: 'Learn ML',
+              phase: 'core_ml',
+              estimatedHours: 30,
+              resources: [],
+            },
+            progress: [],
+          },
+          {
+            id: 'module-3',
+            skillId: 'skill-3',
+            phase: 'deep_learning',
+            sequenceOrder: 3,
+            isLocked: false,
+            isSkipped: false,
+            skill: {
+              id: 'skill-3',
+              name: 'Neural Networks',
+              slug: 'neural-networks',
+              description: 'Learn Deep Learning',
+              phase: 'deep_learning',
+              estimatedHours: 40,
+              resources: [],
+            },
+            progress: [],
+          },
+        ],
+      };
+
+      vi.mocked(prisma.roadmap.findFirst).mockResolvedValue(mockRoadmap as any);
+      vi.mocked(prisma.onboardingState.findUnique).mockResolvedValue({
+        weeklyHours: 10,
+      } as any);
+
+      const result = await getRoadmap(userId);
+
+      result.phases.forEach((phase) => {
+        expect(phase.description).toBeTruthy();
+        expect(phase.description.length).toBeGreaterThan(0);
+      });
+    });
+
+    it('test_phase_estimated_hours_calculated: should calculate total hours for phase with multiple modules', async () => {
+      const userId = 'user-1';
+      const mockRoadmap = {
+        id: 'roadmap-1',
+        userId,
+        title: 'Test Roadmap',
+        description: 'Test Description',
+        sourceRole: 'backend_dev',
+        targetRole: 'ml_engineer',
+        totalEstimatedHours: 150,
+        completedHours: 0,
+        isActive: true,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        modules: [
+          {
+            id: 'module-1',
+            skillId: 'skill-1',
+            phase: 'foundation',
+            sequenceOrder: 1,
+            isLocked: false,
+            isSkipped: false,
+            skill: {
+              id: 'skill-1',
+              name: 'Python Basics',
+              slug: 'python-basics',
+              description: 'Learn Python',
+              phase: 'foundation',
+              estimatedHours: 10,
+              resources: [],
+            },
+            progress: [],
+          },
+          {
+            id: 'module-2',
+            skillId: 'skill-2',
+            phase: 'foundation',
+            sequenceOrder: 2,
+            isLocked: false,
+            isSkipped: false,
+            skill: {
+              id: 'skill-2',
+              name: 'Math Foundations',
+              slug: 'math-foundations',
+              description: 'Learn Math',
+              phase: 'foundation',
+              estimatedHours: 10,
+              resources: [],
+            },
+            progress: [],
+          },
+          {
+            id: 'module-3',
+            skillId: 'skill-3',
+            phase: 'foundation',
+            sequenceOrder: 3,
+            isLocked: false,
+            isSkipped: false,
+            skill: {
+              id: 'skill-3',
+              name: 'Data Basics',
+              slug: 'data-basics',
+              description: 'Learn Data',
+              phase: 'foundation',
+              estimatedHours: 10,
+              resources: [],
+            },
+            progress: [],
+          },
+          {
+            id: 'module-4',
+            skillId: 'skill-4',
+            phase: 'foundation',
+            sequenceOrder: 4,
+            isLocked: false,
+            isSkipped: false,
+            skill: {
+              id: 'skill-4',
+              name: 'Python Advanced',
+              slug: 'python-advanced',
+              description: 'Advanced Python',
+              phase: 'foundation',
+              estimatedHours: 10,
+              resources: [],
+            },
+            progress: [],
+          },
+          {
+            id: 'module-5',
+            skillId: 'skill-5',
+            phase: 'foundation',
+            sequenceOrder: 5,
+            isLocked: false,
+            isSkipped: false,
+            skill: {
+              id: 'skill-5',
+              name: 'Data Structures',
+              slug: 'data-structures',
+              description: 'Learn Data Structures',
+              phase: 'foundation',
+              estimatedHours: 10,
+              resources: [],
+            },
+            progress: [],
+          },
+        ],
+      };
+
+      vi.mocked(prisma.roadmap.findFirst).mockResolvedValue(mockRoadmap as any);
+      vi.mocked(prisma.onboardingState.findUnique).mockResolvedValue({
+        weeklyHours: 10,
+      } as any);
+
+      const result = await getRoadmap(userId);
+
+      const foundationPhase = result.phases.find((p) => p.phase === 'foundation');
+      expect(foundationPhase).toBeDefined();
+      expect(foundationPhase!.totalHours).toBe(50); // 5 modules × 10 hours each
+    });
+
+    it('test_phase_module_count: should return correct module count for phase', async () => {
+      const userId = 'user-1';
+      const mockRoadmap = {
+        id: 'roadmap-1',
+        userId,
+        title: 'Test Roadmap',
+        description: 'Test Description',
+        sourceRole: 'backend_dev',
+        targetRole: 'ml_engineer',
+        totalEstimatedHours: 150,
+        completedHours: 0,
+        isActive: true,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        modules: [
+          {
+            id: 'module-1',
+            skillId: 'skill-1',
+            phase: 'foundation',
+            sequenceOrder: 1,
+            isLocked: false,
+            isSkipped: false,
+            skill: {
+              id: 'skill-1',
+              name: 'Python Basics',
+              slug: 'python-basics',
+              description: 'Learn Python',
+              phase: 'foundation',
+              estimatedHours: 10,
+              resources: [],
+            },
+            progress: [],
+          },
+          {
+            id: 'module-2',
+            skillId: 'skill-2',
+            phase: 'foundation',
+            sequenceOrder: 2,
+            isLocked: false,
+            isSkipped: false,
+            skill: {
+              id: 'skill-2',
+              name: 'Math Foundations',
+              slug: 'math-foundations',
+              description: 'Learn Math',
+              phase: 'foundation',
+              estimatedHours: 10,
+              resources: [],
+            },
+            progress: [],
+          },
+          {
+            id: 'module-3',
+            skillId: 'skill-3',
+            phase: 'foundation',
+            sequenceOrder: 3,
+            isLocked: false,
+            isSkipped: false,
+            skill: {
+              id: 'skill-3',
+              name: 'Data Basics',
+              slug: 'data-basics',
+              description: 'Learn Data',
+              phase: 'foundation',
+              estimatedHours: 10,
+              resources: [],
+            },
+            progress: [],
+          },
+          {
+            id: 'module-4',
+            skillId: 'skill-4',
+            phase: 'foundation',
+            sequenceOrder: 4,
+            isLocked: false,
+            isSkipped: false,
+            skill: {
+              id: 'skill-4',
+              name: 'Python Advanced',
+              slug: 'python-advanced',
+              description: 'Advanced Python',
+              phase: 'foundation',
+              estimatedHours: 10,
+              resources: [],
+            },
+            progress: [],
+          },
+          {
+            id: 'module-5',
+            skillId: 'skill-5',
+            phase: 'foundation',
+            sequenceOrder: 5,
+            isLocked: false,
+            isSkipped: false,
+            skill: {
+              id: 'skill-5',
+              name: 'Data Structures',
+              slug: 'data-structures',
+              description: 'Learn Data Structures',
+              phase: 'foundation',
+              estimatedHours: 10,
+              resources: [],
+            },
+            progress: [],
+          },
+        ],
+      };
+
+      vi.mocked(prisma.roadmap.findFirst).mockResolvedValue(mockRoadmap as any);
+      vi.mocked(prisma.onboardingState.findUnique).mockResolvedValue({
+        weeklyHours: 10,
+      } as any);
+
+      const result = await getRoadmap(userId);
+
+      const foundationPhase = result.phases.find((p) => p.phase === 'foundation');
+      expect(foundationPhase).toBeDefined();
+      expect(foundationPhase!.totalModules).toBe(5);
+    });
+
+    it('test_current_phase_highlighted: should mark Phase 2 as current when user is in Phase 2', async () => {
+      const userId = 'user-1';
+      const mockRoadmap = {
+        id: 'roadmap-1',
+        userId,
+        title: 'Test Roadmap',
+        description: 'Test Description',
+        sourceRole: 'backend_dev',
+        targetRole: 'ml_engineer',
+        totalEstimatedHours: 150,
+        completedHours: 0,
+        isActive: true,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        modules: [
+          {
+            id: 'module-1',
+            skillId: 'skill-1',
+            phase: 'foundation',
+            sequenceOrder: 1,
+            isLocked: false,
+            isSkipped: false,
+            skill: {
+              id: 'skill-1',
+              name: 'Python Basics',
+              slug: 'python-basics',
+              description: 'Learn Python',
+              phase: 'foundation',
+              estimatedHours: 10,
+              resources: [],
+            },
+            progress: [
+              {
+                status: 'completed',
+                startedAt: new Date(),
+                completedAt: new Date(),
+                timeSpentMinutes: 600,
+              },
+            ],
+          },
+          {
+            id: 'module-2',
+            skillId: 'skill-2',
+            phase: 'core_ml',
+            sequenceOrder: 2,
+            isLocked: false,
+            isSkipped: false,
+            skill: {
+              id: 'skill-2',
+              name: 'ML Algorithms',
+              slug: 'ml-algorithms',
+              description: 'Learn ML',
+              phase: 'core_ml',
+              estimatedHours: 30,
+              resources: [],
+            },
+            progress: [
+              {
+                status: 'in_progress',
+                startedAt: new Date(),
+                completedAt: null,
+                timeSpentMinutes: 300,
+              },
+            ],
+          },
+          {
+            id: 'module-3',
+            skillId: 'skill-3',
+            phase: 'deep_learning',
+            sequenceOrder: 3,
+            isLocked: false,
+            isSkipped: false,
+            skill: {
+              id: 'skill-3',
+              name: 'Neural Networks',
+              slug: 'neural-networks',
+              description: 'Learn Deep Learning',
+              phase: 'deep_learning',
+              estimatedHours: 40,
+              resources: [],
+            },
+            progress: [],
+          },
+        ],
+      };
+
+      vi.mocked(prisma.roadmap.findFirst).mockResolvedValue(mockRoadmap as any);
+      vi.mocked(prisma.onboardingState.findUnique).mockResolvedValue({
+        weeklyHours: 10,
+      } as any);
+
+      const result = await getRoadmap(userId);
+
+      const coreMlPhase = result.phases.find((p) => p.phase === 'core_ml');
+      expect(coreMlPhase).toBeDefined();
+      expect(coreMlPhase!.status).toBe('current');
+    });
+
+    it('test_completed_phase_checkmark: should mark Phase 1 as completed when all modules are completed', async () => {
+      const userId = 'user-1';
+      const mockRoadmap = {
+        id: 'roadmap-1',
+        userId,
+        title: 'Test Roadmap',
+        description: 'Test Description',
+        sourceRole: 'backend_dev',
+        targetRole: 'ml_engineer',
+        totalEstimatedHours: 150,
+        completedHours: 0,
+        isActive: true,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        modules: [
+          {
+            id: 'module-1',
+            skillId: 'skill-1',
+            phase: 'foundation',
+            sequenceOrder: 1,
+            isLocked: false,
+            isSkipped: false,
+            skill: {
+              id: 'skill-1',
+              name: 'Python Basics',
+              slug: 'python-basics',
+              description: 'Learn Python',
+              phase: 'foundation',
+              estimatedHours: 10,
+              resources: [],
+            },
+            progress: [
+              {
+                status: 'completed',
+                startedAt: new Date(),
+                completedAt: new Date(),
+                timeSpentMinutes: 600,
+              },
+            ],
+          },
+          {
+            id: 'module-2',
+            skillId: 'skill-2',
+            phase: 'foundation',
+            sequenceOrder: 2,
+            isLocked: false,
+            isSkipped: false,
+            skill: {
+              id: 'skill-2',
+              name: 'Math Foundations',
+              slug: 'math-foundations',
+              description: 'Learn Math',
+              phase: 'foundation',
+              estimatedHours: 10,
+              resources: [],
+            },
+            progress: [
+              {
+                status: 'completed',
+                startedAt: new Date(),
+                completedAt: new Date(),
+                timeSpentMinutes: 600,
+              },
+            ],
+          },
+          {
+            id: 'module-3',
+            skillId: 'skill-3',
+            phase: 'core_ml',
+            sequenceOrder: 3,
+            isLocked: false,
+            isSkipped: false,
+            skill: {
+              id: 'skill-3',
+              name: 'ML Algorithms',
+              slug: 'ml-algorithms',
+              description: 'Learn ML',
+              phase: 'core_ml',
+              estimatedHours: 30,
+              resources: [],
+            },
+            progress: [],
+          },
+        ],
+      };
+
+      vi.mocked(prisma.roadmap.findFirst).mockResolvedValue(mockRoadmap as any);
+      vi.mocked(prisma.onboardingState.findUnique).mockResolvedValue({
+        weeklyHours: 10,
+      } as any);
+
+      const result = await getRoadmap(userId);
+
+      const foundationPhase = result.phases.find((p) => p.phase === 'foundation');
+      expect(foundationPhase).toBeDefined();
+      expect(foundationPhase!.status).toBe('completed');
+      expect(foundationPhase!.completedModules).toBe(2);
+      expect(foundationPhase!.totalModules).toBe(2);
+    });
+
+    it('test_future_phase_locked: should mark Phase 2 as locked when Phase 1 prerequisites not met', async () => {
+      const userId = 'user-1';
+      const mockRoadmap = {
+        id: 'roadmap-1',
+        userId,
+        title: 'Test Roadmap',
+        description: 'Test Description',
+        sourceRole: 'backend_dev',
+        targetRole: 'ml_engineer',
+        totalEstimatedHours: 150,
+        completedHours: 0,
+        isActive: true,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        modules: [
+          {
+            id: 'module-1',
+            skillId: 'skill-1',
+            phase: 'foundation',
+            sequenceOrder: 1,
+            isLocked: false,
+            isSkipped: false,
+            skill: {
+              id: 'skill-1',
+              name: 'Python Basics',
+              slug: 'python-basics',
+              description: 'Learn Python',
+              phase: 'foundation',
+              estimatedHours: 10,
+              resources: [],
+            },
+            progress: [
+              {
+                status: 'in_progress',
+                startedAt: new Date(),
+                completedAt: null,
+                timeSpentMinutes: 300,
+              },
+            ],
+          },
+          {
+            id: 'module-2',
+            skillId: 'skill-2',
+            phase: 'core_ml',
+            sequenceOrder: 2,
+            isLocked: true,
+            isSkipped: false,
+            skill: {
+              id: 'skill-2',
+              name: 'ML Algorithms',
+              slug: 'ml-algorithms',
+              description: 'Learn ML',
+              phase: 'core_ml',
+              estimatedHours: 30,
+              resources: [],
+            },
+            progress: [],
+          },
+        ],
+      };
+
+      vi.mocked(prisma.roadmap.findFirst).mockResolvedValue(mockRoadmap as any);
+      vi.mocked(prisma.onboardingState.findUnique).mockResolvedValue({
+        weeklyHours: 10,
+      } as any);
+
+      const result = await getRoadmap(userId);
+
+      const coreMlPhase = result.phases.find((p) => p.phase === 'core_ml');
+      expect(coreMlPhase).toBeDefined();
+      expect(coreMlPhase!.status).toBe('locked');
+    });
+
+    it('test_phase_order_maintained: should maintain order Foundation → Core ML → Deep Learning', async () => {
+      const userId = 'user-1';
+      const mockRoadmap = {
+        id: 'roadmap-1',
+        userId,
+        title: 'Test Roadmap',
+        description: 'Test Description',
+        sourceRole: 'backend_dev',
+        targetRole: 'ml_engineer',
+        totalEstimatedHours: 150,
+        completedHours: 0,
+        isActive: true,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        modules: [
+          {
+            id: 'module-1',
+            skillId: 'skill-1',
+            phase: 'deep_learning',
+            sequenceOrder: 3,
+            isLocked: false,
+            isSkipped: false,
+            skill: {
+              id: 'skill-1',
+              name: 'Neural Networks',
+              slug: 'neural-networks',
+              description: 'Learn Deep Learning',
+              phase: 'deep_learning',
+              estimatedHours: 40,
+              resources: [],
+            },
+            progress: [],
+          },
+          {
+            id: 'module-2',
+            skillId: 'skill-2',
+            phase: 'foundation',
+            sequenceOrder: 1,
+            isLocked: false,
+            isSkipped: false,
+            skill: {
+              id: 'skill-2',
+              name: 'Python Basics',
+              slug: 'python-basics',
+              description: 'Learn Python',
+              phase: 'foundation',
+              estimatedHours: 10,
+              resources: [],
+            },
+            progress: [],
+          },
+          {
+            id: 'module-3',
+            skillId: 'skill-3',
+            phase: 'core_ml',
+            sequenceOrder: 2,
+            isLocked: false,
+            isSkipped: false,
+            skill: {
+              id: 'skill-3',
+              name: 'ML Algorithms',
+              slug: 'ml-algorithms',
+              description: 'Learn ML',
+              phase: 'core_ml',
+              estimatedHours: 30,
+              resources: [],
+            },
+            progress: [],
+          },
+        ],
+      };
+
+      vi.mocked(prisma.roadmap.findFirst).mockResolvedValue(mockRoadmap as any);
+      vi.mocked(prisma.onboardingState.findUnique).mockResolvedValue({
+        weeklyHours: 10,
+      } as any);
+
+      const result = await getRoadmap(userId);
+
+      expect(result.phases).toHaveLength(3);
+      expect(result.phases[0].phase).toBe('foundation');
+      expect(result.phases[1].phase).toBe('core_ml');
+      expect(result.phases[2].phase).toBe('deep_learning');
+    });
+
+    it('test_modules_assigned_to_correct_phase: should assign module to correct phase based on skill phase', async () => {
+      const userId = 'user-1';
+      const mockRoadmap = {
+        id: 'roadmap-1',
+        userId,
+        title: 'Test Roadmap',
+        description: 'Test Description',
+        sourceRole: 'backend_dev',
+        targetRole: 'ml_engineer',
+        totalEstimatedHours: 150,
+        completedHours: 0,
+        isActive: true,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        modules: [
+          {
+            id: 'module-1',
+            skillId: 'skill-1',
+            phase: 'foundation',
+            sequenceOrder: 1,
+            isLocked: false,
+            isSkipped: false,
+            skill: {
+              id: 'skill-1',
+              name: 'Python Basics',
+              slug: 'python-basics',
+              description: 'Learn Python',
+              phase: 'foundation',
+              estimatedHours: 10,
+              resources: [],
+            },
+            progress: [],
+          },
+        ],
+      };
+
+      vi.mocked(prisma.roadmap.findFirst).mockResolvedValue(mockRoadmap as any);
+      vi.mocked(prisma.onboardingState.findUnique).mockResolvedValue({
+        weeklyHours: 10,
+      } as any);
+
+      const result = await getRoadmap(userId);
+
+      const foundationPhase = result.phases.find((p) => p.phase === 'foundation');
+      expect(foundationPhase).toBeDefined();
+      expect(foundationPhase!.modules).toHaveLength(1);
+      expect(foundationPhase!.modules[0].skill.name).toBe('Python Basics');
+      expect(foundationPhase!.modules[0].phase).toBe('foundation');
+      expect(foundationPhase!.modules[0].skill.phase).toBe('foundation');
+    });
+  });
 });
 
