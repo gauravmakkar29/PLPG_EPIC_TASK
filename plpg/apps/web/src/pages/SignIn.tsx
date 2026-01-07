@@ -54,7 +54,9 @@ export default function SignIn() {
           // - Email/password login (available by default)
           // - "Continue with Google" for OAuth users (configured in Clerk Dashboard)
           // - Invalid credentials show generic error (security - built-in)
-          // - "Forgot password?" link available (built-in)
+          // - "Forgot password?" link available (built-in) - enables password reset flow
+          // - Password reset flow: email sent with reset link, password requirements enforced, redirects to sign-in after success
+          // - Rate limiting for password reset handled by Clerk (built-in)
           // - "Remember me" handled by Clerk session persistence (built-in)
           // - Failed attempts: Clerk handles lockout (5 failures = 15 min) (configured in Clerk Dashboard)
           // - Success redirects to /dashboard (or /onboarding if incomplete via OnboardingGuard)
