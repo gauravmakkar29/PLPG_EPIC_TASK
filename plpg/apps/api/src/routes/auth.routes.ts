@@ -1,10 +1,5 @@
-<<<<<<< HEAD
 import { Router, type IRouter } from 'express';
-import { getSession, clerkWebhook } from '../controllers/auth.controller.js';
-=======
-import { Router } from 'express';
-import { getMe, getSession, clerkWebhook } from '../controllers/auth.controller.js';
->>>>>>> 4384108764234eb13ab9409d73f280f084551795
+import { getMe, clerkWebhook } from '../controllers/auth.controller.js';
 import { requireAuth } from '../middleware/auth.middleware.js';
 
 const router: IRouter = Router();
