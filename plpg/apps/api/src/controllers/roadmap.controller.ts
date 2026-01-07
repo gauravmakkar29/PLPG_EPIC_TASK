@@ -1,6 +1,7 @@
 import type { Request, Response, NextFunction } from 'express';
 import { analyzeGap, type GapAnalysisResult } from '../services/gapAnalysis.service.js';
 import { sequenceSkills, type SequencingResult } from '../services/sequencing.service.js';
+import { generateRoadmap, type RoadmapGenerationResult } from '../services/roadmapGeneration.service.js';
 import { prisma } from '../lib/prisma.js';
 import { logger } from '../lib/logger.js';
 import { BadRequestError } from '@plpg/shared';
@@ -80,6 +81,35 @@ export async function getSequencedSkills(
     res.json({ success: true, data: result });
   } catch (error) {
     logger.error({ error, userId: req.user?.id }, 'Error in skill sequencing');
+    next(error);
+  }
+}
+
+/**
+ * Generate roadmap for the authenticated user
+ * POST /v1/roadmap/generate
+ * Idempotent: returns existing roadmap if one already exists
+ */
+export async function generateRoadmapEndpoint(
+  req: Request,
+  res: Response<{ success: true; data: RoadmapGenerationResult }>,
+  next: NextFunction
+): Promise<void> {
+  try {
+    const userId = req.user!.id;
+
+    const result = await generateRoadmap(userId);
+
+    // Serialize Date to ISO string for JSON response
+    res.status(201).json({
+      success: true,
+      data: {
+        ...result,
+        projectedCompletion: result.projectedCompletion.toISOString(),
+      },
+    });
+  } catch (error) {
+    logger.error({ error, userId: req.user?.id }, 'Error generating roadmap');
     next(error);
   }
 }

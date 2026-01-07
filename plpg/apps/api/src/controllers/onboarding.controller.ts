@@ -3,6 +3,7 @@ import type { OnboardingStateResponse, Step1Data, Step2Data, Step3Data, Step4Dat
 import { prisma } from '../lib/prisma.js';
 import { logger } from '../lib/logger.js';
 import { BadRequestError } from '@plpg/shared';
+import { generateRoadmap } from '../services/roadmapGeneration.service.js';
 
 const TOTAL_STEPS = 5;
 
@@ -341,7 +342,11 @@ export async function completeOnboarding(
       'User completed onboarding'
     );
 
-    // TODO: Trigger roadmap generation in Epic 3
+    // Trigger roadmap generation (non-blocking - don't fail onboarding if this fails)
+    generateRoadmap(userId).catch((error) => {
+      // Log error but don't fail onboarding completion
+      logger.error({ error, userId }, 'Failed to generate roadmap after onboarding completion');
+    });
 
     const response: OnboardingStateResponse = {
       currentStep: updatedState.currentStep,
