@@ -40,5 +40,3 @@ export type SubscriptionStatus =
   | 'past_due'
   | 'trialing'
   | 'unpaid';
-
-// Note: SubscriptionPlan type is exported from constants/subscription.ts
