@@ -1,10 +1,10 @@
 import type { Request, Response, NextFunction } from 'express';
-import type { OnboardingStateResponse, Step1Data, Step2Data, Step3Data } from '@plpg/shared';
+import type { OnboardingStateResponse, Step1Data, Step2Data, Step3Data, Step4Data } from '@plpg/shared';
 import { prisma } from '../lib/prisma.js';
 import { logger } from '../lib/logger.js';
 import { BadRequestError } from '@plpg/shared';
 
-const TOTAL_STEPS = 4;
+const TOTAL_STEPS = 5;
 
 /**
  * Get current onboarding state for the authenticated user
@@ -42,6 +42,7 @@ export async function getOnboardingState(
         customRole: onboardingState.customRole,
         targetRole: onboardingState.targetRole,
         weeklyHours: onboardingState.weeklyHours,
+        existingSkills: onboardingState.existingSkills || [],
       },
     };
 
@@ -83,6 +84,7 @@ export async function saveStep(
       customRole?: string | null;
       targetRole?: string;
       weeklyHours?: number;
+      existingSkills?: string[];
       currentStep?: number;
     } = {};
 
@@ -106,6 +108,12 @@ export async function saveStep(
         updateData.currentStep = Math.max(onboardingState.currentStep, 4);
         break;
       }
+      case 4: {
+        const data = req.body as Step4Data;
+        updateData.existingSkills = data.existingSkills;
+        updateData.currentStep = Math.max(onboardingState.currentStep, 5);
+        break;
+      }
       default:
         throw new BadRequestError('Invalid step number');
     }
@@ -127,6 +135,7 @@ export async function saveStep(
         customRole: updatedState.customRole,
         targetRole: updatedState.targetRole,
         weeklyHours: updatedState.weeklyHours,
+        existingSkills: updatedState.existingSkills || [],
       },
     };
 
@@ -174,6 +183,7 @@ export async function skipOnboarding(
         customRole: updatedState.customRole,
         targetRole: updatedState.targetRole,
         weeklyHours: updatedState.weeklyHours,
+        existingSkills: updatedState.existingSkills || [],
       },
     };
 
@@ -224,6 +234,7 @@ export async function gotoStep(
         customRole: updatedState.customRole,
         targetRole: updatedState.targetRole,
         weeklyHours: updatedState.weeklyHours,
+        existingSkills: updatedState.existingSkills || [],
       },
     };
 
@@ -287,6 +298,7 @@ export async function completeOnboarding(
         customRole: updatedState.customRole,
         targetRole: updatedState.targetRole,
         weeklyHours: updatedState.weeklyHours,
+        existingSkills: updatedState.existingSkills || [],
       },
     };
 

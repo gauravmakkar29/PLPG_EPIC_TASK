@@ -1,32 +1,38 @@
-import { CURRENT_ROLES, TARGET_ROLES, WEEKLY_HOURS_OPTIONS } from '@plpg/shared';
+import { CURRENT_ROLES, TARGET_ROLES, PREREQUISITE_SKILLS } from '@plpg/shared';
 import { cn } from '../../lib/utils';
 
-interface Step4SummaryProps {
+interface Step5SummaryProps {
   currentRole: string | null;
   customRole: string | null;
   targetRole: string | null;
   weeklyHours: number | null;
+  existingSkills: string[];
   onEdit: (step: number) => void;
   onComplete: () => void;
   isLoading?: boolean;
 }
 
-export default function Step4Summary({
+export default function Step5Summary({
   currentRole,
   customRole,
   targetRole,
   weeklyHours,
+  existingSkills,
   onEdit,
   onComplete,
   isLoading = false,
-}: Step4SummaryProps) {
+}: Step5SummaryProps) {
   const currentRoleData = CURRENT_ROLES.find((r) => r.value === currentRole);
   const targetRoleData = TARGET_ROLES.find((r) => r.value === targetRole);
-  const weeklyHoursData = WEEKLY_HOURS_OPTIONS.find((h) => h.value === weeklyHours);
 
   const displayCurrentRole = currentRole === 'other' && customRole ? customRole : currentRoleData?.label || 'Not selected';
   const displayTargetRole = targetRoleData?.label || 'Not selected';
-  const displayWeeklyHours = weeklyHoursData?.label || 'Not selected';
+  const displayWeeklyHours = weeklyHours ? `${weeklyHours} hours/week` : 'Not selected';
+
+  // Get skill labels for display
+  const selectedSkillLabels = existingSkills
+    .map((skillValue) => PREREQUISITE_SKILLS.find((s) => s.value === skillValue)?.label)
+    .filter(Boolean);
 
   const estimatedWeeks =
     targetRoleData?.estimatedHours && weeklyHours
@@ -106,15 +112,54 @@ export default function Step4Summary({
               <div>
                 <div className="text-sm text-secondary-500">Weekly Commitment</div>
                 <div className="font-semibold text-secondary-900">{displayWeeklyHours}</div>
-                {weeklyHoursData && (
-                  <div className="text-xs text-secondary-400">{weeklyHoursData.description}</div>
-                )}
               </div>
             </div>
             <button
               onClick={() => onEdit(3)}
               disabled={isLoading}
               className="text-primary-600 hover:text-primary-700 text-sm font-medium disabled:opacity-50"
+            >
+              Edit
+            </button>
+          </div>
+        </div>
+
+        {/* Existing Skills to Skip */}
+        <div className="bg-white rounded-xl border border-secondary-200 p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-yellow-100 flex items-center justify-center">
+                <svg className="w-5 h-5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                </svg>
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="text-sm text-secondary-500">Skills to Skip</div>
+                {selectedSkillLabels.length > 0 ? (
+                  <div className="mt-1">
+                    <div className="font-semibold text-secondary-900">
+                      {selectedSkillLabels.length} {selectedSkillLabels.length === 1 ? 'skill' : 'skills'}
+                    </div>
+                    <div className="text-xs text-secondary-400 mt-1 flex flex-wrap gap-1">
+                      {selectedSkillLabels.map((label, index) => (
+                        <span
+                          key={index}
+                          className="inline-block bg-yellow-50 text-yellow-700 px-2 py-0.5 rounded"
+                        >
+                          {label}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="font-semibold text-secondary-900">None</div>
+                )}
+              </div>
+            </div>
+            <button
+              onClick={() => onEdit(4)}
+              disabled={isLoading}
+              className="text-primary-600 hover:text-primary-700 text-sm font-medium disabled:opacity-50 flex-shrink-0"
             >
               Edit
             </button>
@@ -142,22 +187,6 @@ export default function Step4Summary({
             </div>
           </div>
         )}
-
-        {/* Skills to Skip - placeholder for future implementation */}
-        <div className="bg-white rounded-xl border border-secondary-200 p-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-yellow-100 flex items-center justify-center">
-              <svg className="w-5 h-5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
-              </svg>
-            </div>
-            <div>
-              <div className="text-sm text-secondary-500">Skills to Skip</div>
-              <div className="font-semibold text-secondary-900">None</div>
-              <div className="text-xs text-secondary-400">You can skip skills later during your journey</div>
-            </div>
-          </div>
-        </div>
       </div>
 
       <div className="pt-4">

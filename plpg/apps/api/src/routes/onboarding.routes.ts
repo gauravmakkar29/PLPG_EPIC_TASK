@@ -8,7 +8,7 @@ import {
 } from '../controllers/onboarding.controller.js';
 import { requireAuth } from '../middleware/auth.middleware.js';
 import { validate } from '../middleware/validate.middleware.js';
-import { step1Schema, step2Schema, step3Schema, stepParamsSchema } from '@plpg/shared';
+import { step1Schema, step2Schema, step3Schema, step4Schema, stepParamsSchema } from '@plpg/shared';
 
 const router = Router();
 
@@ -33,6 +33,9 @@ router.patch('/step/:step', validate({ params: stepParamsSchema }), async (req, 
       break;
     case 3:
       bodySchema = step3Schema;
+      break;
+    case 4:
+      bodySchema = step4Schema;
       break;
     default:
       return next();

@@ -4,7 +4,8 @@ import OnboardingLayout from '../components/onboarding/OnboardingLayout';
 import Step1CurrentRole from '../components/onboarding/Step1CurrentRole';
 import Step2TargetRole from '../components/onboarding/Step2TargetRole';
 import Step3WeeklyTime from '../components/onboarding/Step3WeeklyTime';
-import Step4Summary from '../components/onboarding/Step4Summary';
+import Step4ExistingSkills from '../components/onboarding/Step4ExistingSkills';
+import Step5Summary from '../components/onboarding/Step5Summary';
 import { useOnboardingState, useSaveStep, useSkipOnboarding, useCompleteOnboarding, useGotoStep } from '../hooks/useOnboarding';
 import { track } from '../lib/analytics';
 
@@ -45,11 +46,21 @@ export default function Onboarding() {
   };
 
   const handleStep3Next = (data: { weeklyHours: number }) => {
-    // Save step 3 data and move to step 4 (summary)
+    // Save step 3 data and move to step 4 (existing skills)
     saveStep.mutate({ step: 3, data });
   };
 
-  const handleStep4Edit = (step: number) => {
+  const handleStep4Back = () => {
+    // Navigate back to step 3 - the state already has the data
+    saveStep.mutate({ step: 3, data: { weeklyHours: onboardingState?.data.weeklyHours || 10 } });
+  };
+
+  const handleStep4Next = (data: { existingSkills: string[] }) => {
+    // Save step 4 data and move to step 5 (summary)
+    saveStep.mutate({ step: 4, data });
+  };
+
+  const handleStep5Edit = (step: number) => {
     // Navigate back to a specific step for editing
     gotoStep.mutate(step);
   };
@@ -60,6 +71,7 @@ export default function Onboarding() {
       currentRole: onboardingState?.data.currentRole,
       targetRole: onboardingState?.data.targetRole,
       weeklyHours: onboardingState?.data.weeklyHours,
+      existingSkillsCount: onboardingState?.data.existingSkills?.length || 0,
     });
 
     completeOnboarding.mutate(undefined, {
@@ -127,12 +139,22 @@ export default function Onboarding() {
       )}
 
       {currentStep === 4 && (
-        <Step4Summary
+        <Step4ExistingSkills
+          initialValue={onboardingState?.data.existingSkills || []}
+          onNext={handleStep4Next}
+          onBack={handleStep4Back}
+          isLoading={isStepLoading}
+        />
+      )}
+
+      {currentStep === 5 && (
+        <Step5Summary
           currentRole={onboardingState?.data.currentRole || null}
           customRole={onboardingState?.data.customRole || null}
           targetRole={onboardingState?.data.targetRole || null}
           weeklyHours={onboardingState?.data.weeklyHours || null}
-          onEdit={handleStep4Edit}
+          existingSkills={onboardingState?.data.existingSkills || []}
+          onEdit={handleStep5Edit}
           onComplete={handleGeneratePath}
           isLoading={isStepLoading}
         />
