@@ -1,0 +1,245 @@
+openapi: 3.0.3
+info:
+  title: PLPG API
+  description: Personalized Learning Path Generator API
+  version: 1.0.0
+  contact:
+    name: PLPG Team
+    email: support@plpg.dev
+
+servers:
+  - url: http://localhost:3001/v1
+    description: Development server
+  - url: https://api.plpg.dev/v1
+    description: Production server
+
+tags:
+  - name: Auth
+    description: Authentication endpoints
+  - name: Health
+    description: Health check endpoints
+  - name: Roadmap
+    description: Roadmap management
+  - name: Progress
+    description: Progress tracking
+
+paths:
+  /health:
+    get:
+      tags:
+        - Health
+      summary: Health check
+      description: Returns the health status of the API
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+        '503':
+          description: Service is unhealthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+
+  /auth/me:
+    get:
+      tags:
+        - Auth
+      summary: Get current session
+      description: Returns the current authenticated user's session
+      operationId: getSession
+      security:
+        - clerkAuth: []
+      responses:
+        '200':
+          description: Current user session
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /auth/webhook/clerk:
+    post:
+      tags:
+        - Auth
+      summary: Clerk webhook
+      description: Receives webhook events from Clerk
+      operationId: clerkWebhook
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Webhook received
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  received:
+                    type: boolean
+                    example: true
+
+components:
+  schemas:
+    HealthResponse:
+      type: object
+      required:
+        - status
+        - timestamp
+        - uptime
+        - database
+      properties:
+        status:
+          type: string
+          enum: [healthy, unhealthy]
+          example: healthy
+        timestamp:
+          type: string
+          format: date-time
+          example: '2024-01-15T10:30:00Z'
+        uptime:
+          type: number
+          description: Server uptime in seconds
+          example: 3600
+        database:
+          type: string
+          enum: [connected, disconnected]
+          example: connected
+
+    Session:
+      type: object
+      required:
+        - userId
+        - email
+        - subscriptionStatus
+      properties:
+        userId:
+          type: string
+          format: uuid
+          example: '123e4567-e89b-12d3-a456-426614174000'
+        email:
+          type: string
+          format: email
+          example: 'user@example.com'
+        name:
+          type: string
+          nullable: true
+          example: 'John Doe'
+        subscriptionStatus:
+          type: string
+          enum: [free, trial, pro]
+          example: trial
+        trialEndsAt:
+          type: string
+          format: date-time
+          nullable: true
+          example: '2024-01-29T10:30:00Z'
+
+    SessionResponse:
+      type: object
+      required:
+        - success
+        - data
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          $ref: '#/components/schemas/Session'
+
+    Error:
+      type: object
+      required:
+        - success
+        - error
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          type: object
+          required:
+            - code
+            - message
+          properties:
+            code:
+              type: string
+              example: 'UNAUTHORIZED'
+            message:
+              type: string
+              example: 'Authentication required'
+            errors:
+              type: object
+              additionalProperties:
+                type: array
+                items:
+                  type: string
+
+  responses:
+    Unauthorized:
+      description: Unauthorized - authentication required
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            success: false
+            error:
+              code: 'UNAUTHORIZED'
+              message: 'Authentication required'
+
+    Forbidden:
+      description: Forbidden - insufficient permissions
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            success: false
+            error:
+              code: 'FORBIDDEN'
+              message: 'Pro subscription required'
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            success: false
+            error:
+              code: 'NOT_FOUND'
+              message: 'Resource not found'
+
+    ValidationError:
+      description: Validation error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            success: false
+            error:
+              code: 'VALIDATION_ERROR'
+              message: 'Validation failed'
+              errors:
+                email:
+                  - 'Invalid email format'
+
+  securitySchemes:
+    clerkAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Clerk JWT token

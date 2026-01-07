@@ -1,0 +1,236 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// User & Authentication
+// ============================================
+
+model User {
+  id              String    @id @default(uuid())
+  clerkId         String    @unique
+  email           String    @unique
+  name            String?
+  avatarUrl       String?
+  trialStartDate  DateTime?
+  trialEndDate    DateTime?
+  emailVerified   Boolean   @default(false)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  // Relations
+  subscription         Subscription?
+  onboardingResponses  OnboardingResponse[]
+  roadmaps             Roadmap[]
+  progress             Progress[]
+  weeklyCheckins       WeeklyCheckin[]
+  feedback             Feedback[]
+
+  @@map("users")
+}
+
+model Subscription {
+  id                   String    @id @default(uuid())
+  userId               String    @unique
+  stripeCustomerId     String?   @unique
+  stripeSubscriptionId String?   @unique
+  status               String    @default("trialing")
+  plan                 String    @default("free")
+  currentPeriodStart   DateTime?
+  currentPeriodEnd     DateTime?
+  cancelAtPeriodEnd    Boolean   @default(false)
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("subscriptions")
+}
+
+// ============================================
+// Onboarding
+// ============================================
+
+model OnboardingResponse {
+  id          String   @id @default(uuid())
+  userId      String
+  questionKey String
+  answer      Json
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, questionKey])
+  @@map("onboarding_responses")
+}
+
+// ============================================
+// Skills & Resources
+// ============================================
+
+model Skill {
+  id             String   @id @default(uuid())
+  name           String
+  slug           String   @unique
+  description    String
+  phase          String   // foundation, intermediate, advanced
+  estimatedHours Int
+  isOptional     Boolean  @default(false)
+  sequenceOrder  Int
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  // Relations
+  resources     Resource[]
+  dependencies  SkillDependency[] @relation("SkillDependencies")
+  dependents    SkillDependency[] @relation("DependentSkills")
+  roadmapModules RoadmapModule[]
+
+  @@map("skills")
+}
+
+model SkillDependency {
+  id          String  @id @default(uuid())
+  skillId     String
+  dependsOnId String
+  isHard      Boolean @default(true)
+
+  // Relations
+  skill     Skill @relation("SkillDependencies", fields: [skillId], references: [id], onDelete: Cascade)
+  dependsOn Skill @relation("DependentSkills", fields: [dependsOnId], references: [id], onDelete: Cascade)
+
+  @@unique([skillId, dependsOnId])
+  @@map("skill_dependencies")
+}
+
+model Resource {
+  id              String   @id @default(uuid())
+  skillId         String
+  title           String
+  url             String
+  type            String   // video, article, course, book, tutorial, documentation, exercise, project
+  provider        String?
+  durationMinutes Int?
+  isFree          Boolean  @default(true)
+  quality         Int      @default(3) // 1-5 rating
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relations
+  skill Skill @relation(fields: [skillId], references: [id], onDelete: Cascade)
+
+  @@map("resources")
+}
+
+// ============================================
+// Roadmaps & Progress
+// ============================================
+
+model Roadmap {
+  id                  String   @id @default(uuid())
+  userId              String
+  title               String
+  description         String?
+  sourceRole          String
+  targetRole          String
+  totalEstimatedHours Int      @default(0)
+  completedHours      Int      @default(0)
+  isActive            Boolean  @default(true)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  // Relations
+  user    User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  modules RoadmapModule[]
+
+  @@map("roadmaps")
+}
+
+model RoadmapModule {
+  id            String   @id @default(uuid())
+  roadmapId     String
+  skillId       String
+  phase         String
+  sequenceOrder Int
+  isLocked      Boolean  @default(false)
+  isSkipped     Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  roadmap  Roadmap    @relation(fields: [roadmapId], references: [id], onDelete: Cascade)
+  skill    Skill      @relation(fields: [skillId], references: [id])
+  progress Progress[]
+
+  @@unique([roadmapId, skillId])
+  @@map("roadmap_modules")
+}
+
+model Progress {
+  id               String    @id @default(uuid())
+  userId           String
+  roadmapModuleId  String
+  status           String    @default("not_started") // not_started, in_progress, completed, skipped
+  startedAt        DateTime?
+  completedAt      DateTime?
+  timeSpentMinutes Int       @default(0)
+  notes            String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  // Relations
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  roadmapModule RoadmapModule @relation(fields: [roadmapModuleId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, roadmapModuleId])
+  @@map("progress")
+}
+
+// ============================================
+// Check-ins & Feedback
+// ============================================
+
+model WeeklyCheckin {
+  id              String   @id @default(uuid())
+  userId          String
+  weekStartDate   DateTime
+  hoursSpent      Float
+  challengesFaced String?
+  winsAchieved    String?
+  focusNextWeek   String?
+  motivationLevel Int      // 1-10
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, weekStartDate])
+  @@map("weekly_checkins")
+}
+
+model Feedback {
+  id        String   @id @default(uuid())
+  userId    String
+  type      String   // bug, feature_request, general, resource_quality, content_suggestion
+  category  String   // roadmap, resources, ui_ux, performance, other
+  content   String
+  rating    Int?
+  metadata  Json?
+  status    String   @default("pending") // pending, reviewed, in_progress, resolved, closed
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("feedback")
+}
