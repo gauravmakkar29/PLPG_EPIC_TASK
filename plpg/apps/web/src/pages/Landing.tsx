@@ -1,4 +1,4 @@
-import { SignInButton, SignUpButton, SignedIn, SignedOut, UserButton } from '@clerk/clerk-react';
+import { SignedIn, SignedOut, UserButton } from '@clerk/clerk-react';
 import { Link } from 'react-router-dom';
 
 export default function Landing() {
@@ -9,16 +9,18 @@ export default function Landing() {
           <div className="text-2xl font-bold text-primary-600">PLPG</div>
           <div className="flex items-center gap-4">
             <SignedOut>
-              <SignInButton mode="modal">
-                <button className="px-4 py-2 text-primary-600 hover:text-primary-700">
-                  Sign In
-                </button>
-              </SignInButton>
-              <SignUpButton mode="modal">
-                <button className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700">
-                  Get Started
-                </button>
-              </SignUpButton>
+              <Link
+                to="/sign-in"
+                className="px-4 py-2 text-primary-600 hover:text-primary-700"
+              >
+                Sign In
+              </Link>
+              <Link
+                to="/sign-up"
+                className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700"
+              >
+                Get Started
+              </Link>
             </SignedOut>
             <SignedIn>
               <Link
@@ -43,11 +45,12 @@ export default function Landing() {
             Powered by AI, guided by experts.
           </p>
           <SignedOut>
-            <SignUpButton mode="modal">
-              <button className="px-8 py-4 bg-primary-600 text-white text-lg font-semibold rounded-lg hover:bg-primary-700 transition-colors">
-                Start Your Free Trial
-              </button>
-            </SignUpButton>
+            <Link
+              to="/sign-up"
+              className="inline-block px-8 py-4 bg-primary-600 text-white text-lg font-semibold rounded-lg hover:bg-primary-700 transition-colors"
+            >
+              Start Your Free Trial
+            </Link>
           </SignedOut>
           <SignedIn>
             <Link
