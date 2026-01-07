@@ -40,3 +40,5 @@ export type SubscriptionStatus =
   | 'past_due'
   | 'trialing'
   | 'unpaid';
+
+export type SubscriptionPlan = 'free' | 'pro';
