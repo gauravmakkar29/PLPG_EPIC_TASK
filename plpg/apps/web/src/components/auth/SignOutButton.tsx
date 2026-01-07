@@ -1,4 +1,4 @@
-import { useClerk } from '@clerk/clerk-react';
+import { useAuth } from '../../contexts/AuthContext';
 import { useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { useUIStore } from '../../stores/uiStore';
@@ -15,7 +15,7 @@ export function SignOutButton({
   className = '',
   children,
 }: SignOutButtonProps) {
-  const { signOut } = useClerk();
+  const { logout } = useAuth();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
 
@@ -24,8 +24,8 @@ export function SignOutButton({
       // Track analytics event
       track('logout_completed');
 
-      // Sign out from Clerk
-      await signOut();
+      // Sign out
+      logout();
 
       // Clear TanStack Query cache
       queryClient.clear();

@@ -1,6 +1,6 @@
-import { useUser } from '@clerk/clerk-react';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 import api from '../services/api';
 import { SignOutButton } from '../components/auth/SignOutButton';
 import { EmailVerificationBanner } from '../components/auth/EmailVerificationBanner';
@@ -13,7 +13,7 @@ interface HealthStatus {
 }
 
 export default function Dashboard() {
-  const { user } = useUser();
+  const { user } = useAuth();
   const [health, setHealth] = useState<HealthStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -46,7 +46,7 @@ export default function Dashboard() {
             <h1 className="text-2xl font-bold text-primary-600">PLPG Dashboard</h1>
             <div className="flex items-center gap-4">
               <span className="text-secondary-600">
-                Welcome, {user?.firstName || user?.emailAddresses[0]?.emailAddress}
+                Welcome, {user?.name || user?.email || 'User'}
               </span>
               <Link
                 to="/settings"

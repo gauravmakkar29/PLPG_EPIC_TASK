@@ -1,7 +1,7 @@
 import type { Request, Response, NextFunction } from 'express';
-import { getAuth } from '@clerk/express';
 import { UnauthorizedError, ForbiddenError } from '@plpg/shared';
 import { prisma } from '../lib/prisma.js';
+import { verifyToken, extractTokenFromHeader } from '../lib/jwt.js';
 
 // Augment Express Request
 declare global {
@@ -9,7 +9,6 @@ declare global {
     interface Request {
       user?: {
         id: string;
-        clerkId: string;
         email: string;
         name: string | null;
         subscriptionStatus: 'free' | 'trial' | 'pro';
@@ -20,7 +19,7 @@ declare global {
 }
 
 /**
- * Validates Clerk JWT and attaches user to request
+ * Validates JWT token from Authorization header and attaches user to request
  * Usage: router.get('/protected', requireAuth, handler)
  */
 export async function requireAuth(
@@ -29,20 +28,28 @@ export async function requireAuth(
   next: NextFunction
 ): Promise<void> {
   try {
-    const { userId } = getAuth(req);
-
-    if (!userId) {
+    // Extract token from Authorization header
+    const token = extractTokenFromHeader(req.headers.authorization);
+    if (!token) {
       throw new UnauthorizedError('Authentication required');
     }
 
+    // Verify JWT token
+    const decoded = verifyToken(token);
+
     // Fetch user from database
     const user = await prisma.user.findUnique({
-      where: { clerkId: userId },
+      where: { id: decoded.userId },
       include: { subscription: true },
     });
 
     if (!user) {
       throw new UnauthorizedError('User not found');
+    }
+
+    // Verify email matches (extra security check)
+    if (user.email !== decoded.email) {
+      throw new UnauthorizedError('Invalid token');
     }
 
     // Determine subscription status
@@ -57,7 +64,6 @@ export async function requireAuth(
 
     req.user = {
       id: user.id,
-      clerkId: user.clerkId,
       email: user.email,
       name: user.name,
       subscriptionStatus,
@@ -142,33 +148,38 @@ export async function optionalAuth(
   next: NextFunction
 ): Promise<void> {
   try {
-    const { userId } = getAuth(req);
+    // Extract token from Authorization header
+    const token = extractTokenFromHeader(req.headers.authorization);
+    if (!token) {
+      return next();
+    }
 
-    if (userId) {
-      const user = await prisma.user.findUnique({
-        where: { clerkId: userId },
-        include: { subscription: true },
-      });
+    // Verify JWT token
+    const decoded = verifyToken(token);
 
-      if (user) {
-        let subscriptionStatus: 'free' | 'trial' | 'pro' = 'free';
-        const now = new Date();
+    // Fetch user from database
+    const user = await prisma.user.findUnique({
+      where: { id: decoded.userId },
+      include: { subscription: true },
+    });
 
-        if (user.subscription?.status === 'active') {
-          subscriptionStatus = 'pro';
-        } else if (user.trialEndDate && user.trialEndDate > now) {
-          subscriptionStatus = 'trial';
-        }
+    if (user && user.email === decoded.email) {
+      let subscriptionStatus: 'free' | 'trial' | 'pro' = 'free';
+      const now = new Date();
 
-        req.user = {
-          id: user.id,
-          clerkId: user.clerkId,
-          email: user.email,
-          name: user.name,
-          subscriptionStatus,
-          trialEndsAt: user.trialEndDate,
-        };
+      if (user.subscription?.status === 'active') {
+        subscriptionStatus = 'pro';
+      } else if (user.trialEndDate && user.trialEndDate > now) {
+        subscriptionStatus = 'trial';
       }
+
+      req.user = {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        subscriptionStatus,
+        trialEndsAt: user.trialEndDate,
+      };
     }
 
     next();

@@ -1,7 +1,5 @@
 import { Routes, Route } from 'react-router-dom';
-import { ClerkProvider, useAuth } from '@clerk/clerk-react';
-import { QueryClientProvider } from '@tanstack/react-query';
-import { queryClient } from './lib/queryClient';
+import { useAuth } from './contexts/AuthContext';
 import Landing from './pages/Landing';
 import Dashboard from './pages/Dashboard';
 import Onboarding from './pages/Onboarding';
@@ -12,21 +10,6 @@ import SignUp from './pages/SignUp';
 import NotFound from './pages/NotFound';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import OnboardingGuard from './components/OnboardingGuard';
-
-const clerkPubKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
-
-// Check if it's a placeholder or empty - if so, this component shouldn't be used
-// (DevApp should be used instead via main.tsx)
-const isPlaceholderOrEmpty = !clerkPubKey || 
-                              clerkPubKey === 'pk_test_...' || 
-                              clerkPubKey === 'pk_test_placeholder' ||
-                              (typeof clerkPubKey === 'string' && clerkPubKey.includes('placeholder'));
-
-// Never throw error - main.tsx handles routing to DevApp for placeholders/empty keys
-// Provide a safe default to prevent Clerk errors if App.tsx is accidentally used
-const safeClerkKey = isPlaceholderOrEmpty || !clerkPubKey 
-  ? 'pk_test_placeholder' 
-  : clerkPubKey;
 
 function LoadingSpinner() {
   return (
@@ -40,9 +23,9 @@ function LoadingSpinner() {
 }
 
 function AppRoutes() {
-  const { isLoaded } = useAuth();
+  const { isLoading } = useAuth();
 
-  if (!isLoaded) {
+  if (isLoading) {
     return <LoadingSpinner />;
   }
 
@@ -95,19 +78,7 @@ function AppRoutes() {
 }
 
 function App() {
-  return (
-    <ClerkProvider
-      publishableKey={safeClerkKey}
-      signInUrl="/sign-in"
-      signUpUrl="/sign-up"
-      afterSignInUrl="/dashboard"
-      afterSignUpUrl="/onboarding"
-    >
-      <QueryClientProvider client={queryClient}>
-        <AppRoutes />
-      </QueryClientProvider>
-    </ClerkProvider>
-  );
+  return <AppRoutes />;
 }
 
 export default App;

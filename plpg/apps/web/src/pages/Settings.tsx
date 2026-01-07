@@ -1,5 +1,5 @@
-import { useUser } from '@clerk/clerk-react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 import { useOnboardingState } from '../hooks/useOnboarding';
 import { SignOutButton } from '../components/auth/SignOutButton';
 import { EmailVerificationBanner } from '../components/auth/EmailVerificationBanner';
@@ -31,7 +31,7 @@ const WEEKLY_HOURS: Record<number, string> = {
 };
 
 export default function Settings() {
-  const { user } = useUser();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const { data: onboardingState, isLoading: isLoadingOnboarding } = useOnboardingState();
 
@@ -115,25 +115,17 @@ export default function Settings() {
               </button>
             </div>
             <div className="flex items-center gap-4">
-              {user?.imageUrl ? (
-                <img
-                  src={user.imageUrl}
-                  alt="Profile"
-                  className="w-16 h-16 rounded-full"
-                />
-              ) : (
-                <div className="w-16 h-16 rounded-full bg-primary-100 flex items-center justify-center">
-                  <span className="text-2xl font-semibold text-primary-600">
-                    {user?.firstName?.[0] || user?.emailAddresses[0]?.emailAddress[0]?.toUpperCase()}
-                  </span>
-                </div>
-              )}
+              <div className="w-16 h-16 rounded-full bg-primary-100 flex items-center justify-center">
+                <span className="text-2xl font-semibold text-primary-600">
+                  {user?.name?.[0] || user?.email?.[0]?.toUpperCase() || 'U'}
+                </span>
+              </div>
               <div>
                 <p className="font-medium text-secondary-900">
-                  {user?.firstName} {user?.lastName}
+                  {user?.name || 'User'}
                 </p>
                 <p className="text-secondary-600 text-sm">
-                  {user?.emailAddresses[0]?.emailAddress}
+                  {user?.email}
                 </p>
               </div>
             </div>

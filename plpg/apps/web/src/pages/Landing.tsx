@@ -1,36 +1,57 @@
-import { SignedIn, SignedOut, UserButton } from '@clerk/clerk-react';
 import { Link } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
+import { SignOutButton } from '../components/auth/SignOutButton';
 
 export default function Landing() {
+  const { isAuthenticated, user } = useAuth();
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-primary-50 to-white">
       <header className="container mx-auto px-4 py-6">
         <nav className="flex items-center justify-between">
           <div className="text-2xl font-bold text-primary-600">PLPG</div>
           <div className="flex items-center gap-4">
-            <SignedOut>
-              <Link
-                to="/sign-in"
-                className="px-4 py-2 text-primary-600 hover:text-primary-700"
-              >
-                Sign In
-              </Link>
-              <Link
-                to="/sign-up"
-                className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700"
-              >
-                Get Started
-              </Link>
-            </SignedOut>
-            <SignedIn>
-              <Link
-                to="/dashboard"
-                className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700"
-              >
-                Dashboard
-              </Link>
-              <UserButton afterSignOutUrl="/" />
-            </SignedIn>
+            {!isAuthenticated ? (
+              <>
+                <Link
+                  to="/sign-in"
+                  className="px-4 py-2 text-primary-600 hover:text-primary-700"
+                >
+                  Sign In
+                </Link>
+                <Link
+                  to="/sign-up"
+                  className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700"
+                >
+                  Get Started
+                </Link>
+              </>
+            ) : (
+              <>
+                <Link
+                  to="/dashboard"
+                  className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700"
+                >
+                  Dashboard
+                </Link>
+                <div className="flex items-center gap-2">
+                  {user?.name ? (
+                    <div className="w-8 h-8 rounded-full bg-primary-100 flex items-center justify-center">
+                      <span className="text-sm font-semibold text-primary-600">
+                        {user.name[0].toUpperCase()}
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="w-8 h-8 rounded-full bg-primary-100 flex items-center justify-center">
+                      <span className="text-sm font-semibold text-primary-600">
+                        {user?.email?.[0]?.toUpperCase()}
+                      </span>
+                    </div>
+                  )}
+                  <SignOutButton variant="ghost" />
+                </div>
+              </>
+            )}
           </div>
         </nav>
       </header>
@@ -44,22 +65,21 @@ export default function Landing() {
             PLPG creates custom learning roadmaps to help you transition into your dream tech role.
             Powered by AI, guided by experts.
           </p>
-          <SignedOut>
+          {!isAuthenticated ? (
             <Link
               to="/sign-up"
               className="inline-block px-8 py-4 bg-primary-600 text-white text-lg font-semibold rounded-lg hover:bg-primary-700 transition-colors"
             >
               Start Your Free Trial
             </Link>
-          </SignedOut>
-          <SignedIn>
+          ) : (
             <Link
               to="/dashboard"
               className="inline-block px-8 py-4 bg-primary-600 text-white text-lg font-semibold rounded-lg hover:bg-primary-700 transition-colors"
             >
               Go to Dashboard
             </Link>
-          </SignedIn>
+          )}
         </div>
 
         <div className="mt-20 grid md:grid-cols-3 gap-8">

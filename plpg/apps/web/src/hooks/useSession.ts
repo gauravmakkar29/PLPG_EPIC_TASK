@@ -1,23 +1,21 @@
 import { useQuery } from '@tanstack/react-query';
-import { useAuth } from '@clerk/clerk-react';
 import type { Session } from '@plpg/shared';
 import api from '../services/api';
+import { authService } from '../lib/auth';
 
 export function useSession() {
-  const { isSignedIn, getToken } = useAuth();
+  const isAuthenticated = authService.isAuthenticated();
 
   return useQuery<Session>({
     queryKey: ['session'],
     queryFn: async () => {
-      const token = await getToken();
-      const response = await api.get<Session>('/auth/me', {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const response = await api.get<Session>('/auth/me');
       return response.data;
     },
-    enabled: isSignedIn,
+    enabled: isAuthenticated,
     staleTime: 1000 * 60 * 5, // 5 minutes
     refetchOnWindowFocus: true,
+    retry: false,
   });
 }
 

@@ -1,19 +1,16 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
+import { authService, type User, type LoginCredentials, type SignupCredentials } from '../lib/auth';
+import { useQuery } from '@tanstack/react-query';
+import type { Session } from '@plpg/shared';
 import api from '../services/api';
-
-interface User {
-  id: string;
-  email: string;
-  name: string | null;
-}
 
 interface AuthContextType {
   user: User | null;
-  token: string | null;
-  isLoaded: boolean;
-  isSignedIn: boolean;
-  login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string, name?: string) => Promise<void>;
+  session: Session | null;
+  isLoading: boolean;
+  isAuthenticated: boolean;
+  login: (credentials: LoginCredentials) => Promise<void>;
+  signup: (credentials: SignupCredentials) => Promise<void>;
   logout: () => void;
 }
 
@@ -21,80 +18,60 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(null);
-  const [isLoaded, setIsLoaded] = useState(false);
+  const isAuthenticated = authService.isAuthenticated();
+  
+  // Fetch session if authenticated
+  const { data: session, isLoading: isLoadingSession } = useQuery<Session>({
+    queryKey: ['session'],
+    queryFn: async () => {
+      const response = await api.get<Session>('/auth/me');
+      return response.data;
+    },
+    enabled: isAuthenticated,
+    staleTime: 1000 * 60 * 5,
+    refetchOnWindowFocus: true,
+    retry: false,
+  });
 
+  // Update user when session loads
   useEffect(() => {
-    // Check for existing token on mount
-    const storedToken = localStorage.getItem('token');
-    if (storedToken) {
-      setToken(storedToken);
-      api.defaults.headers.common['Authorization'] = `Bearer ${storedToken}`;
-      // Validate token and get user
-      api.get('/auth/me')
-        .then((response) => {
-          setUser({
-            id: response.data.userId,
-            email: response.data.email,
-            name: response.data.name,
-          });
-        })
-        .catch(() => {
-          // Token invalid, clear it
-          localStorage.removeItem('token');
-          setToken(null);
-          delete api.defaults.headers.common['Authorization'];
-        })
-        .finally(() => {
-          setIsLoaded(true);
-        });
-    } else {
-      setIsLoaded(true);
+    if (session) {
+      setUser({
+        id: session.userId,
+        email: session.email,
+        name: session.name,
+      });
+    } else if (!isLoadingSession && !isAuthenticated) {
+      setUser(null);
     }
-  }, []);
+  }, [session, isLoadingSession, isAuthenticated]);
 
-  const login = async (email: string, password: string) => {
-    const response = await api.post('/auth/login', { email, password });
-    const { user: userData, token: newToken } = response.data.data;
-    
-    localStorage.setItem('token', newToken);
-    api.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
-    setToken(newToken);
-    setUser(userData);
+  const login = async (credentials: LoginCredentials) => {
+    const response = await authService.login(credentials);
+    setUser(response.user);
   };
 
-  const register = async (email: string, password: string, name?: string) => {
-    const response = await api.post('/auth/register', { email, password, name });
-    const { user: userData, token: newToken } = response.data.data;
-    
-    localStorage.setItem('token', newToken);
-    api.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
-    setToken(newToken);
-    setUser(userData);
+  const signup = async (credentials: SignupCredentials) => {
+    const response = await authService.signup(credentials);
+    setUser(response.user);
   };
 
   const logout = () => {
-    localStorage.removeItem('token');
-    delete api.defaults.headers.common['Authorization'];
-    setToken(null);
+    authService.logout();
     setUser(null);
   };
 
-  return (
-    <AuthContext.Provider
-      value={{
-        user,
-        token,
-        isLoaded,
-        isSignedIn: !!user,
-        login,
-        register,
-        logout,
-      }}
-    >
-      {children}
-    </AuthContext.Provider>
-  );
+  const value: AuthContextType = {
+    user,
+    session: session || null,
+    isLoading: isLoadingSession,
+    isAuthenticated: !!user && isAuthenticated,
+    login,
+    signup,
+    logout,
+  };
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth() {
@@ -104,3 +81,4 @@ export function useAuth() {
   }
   return context;
 }
+

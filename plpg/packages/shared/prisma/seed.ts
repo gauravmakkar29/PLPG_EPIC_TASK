@@ -181,10 +181,14 @@ async function main(): Promise<void> {
   console.log('Created resources');
 
   // Create a test user (for development)
+  // Password: test123456
+  const bcrypt = await import('bcrypt');
+  const passwordHash = await bcrypt.default.hash('test123456', 10);
+  
   const testUser = await prisma.user.create({
     data: {
-      clerkId: 'test_clerk_123',
       email: 'test@example.com',
+      passwordHash,
       name: 'Test User',
       trialStartDate: new Date(),
       trialEndDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000), // 14 days from now
