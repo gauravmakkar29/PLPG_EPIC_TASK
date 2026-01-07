@@ -5,6 +5,7 @@ import { queryClient } from './lib/queryClient';
 import Landing from './pages/Landing';
 import Dashboard from './pages/Dashboard';
 import Onboarding from './pages/Onboarding';
+import Settings from './pages/Settings';
 import SignIn from './pages/SignIn';
 import SignUp from './pages/SignUp';
 import NotFound from './pages/NotFound';
@@ -64,6 +65,16 @@ function AppRoutes() {
           <ProtectedRoute>
             <OnboardingGuard>
               <Dashboard />
+            </OnboardingGuard>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/settings"
+        element={
+          <ProtectedRoute>
+            <OnboardingGuard>
+              <Settings />
             </OnboardingGuard>
           </ProtectedRoute>
         }
