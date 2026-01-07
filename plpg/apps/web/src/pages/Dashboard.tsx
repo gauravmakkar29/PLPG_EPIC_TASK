@@ -2,6 +2,7 @@ import { useUser } from '@clerk/clerk-react';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../services/api';
+import { SignOutButton } from '../components/auth/SignOutButton';
 
 interface HealthStatus {
   status: 'healthy' | 'unhealthy';
@@ -71,6 +72,7 @@ export default function Dashboard() {
                   />
                 </svg>
               </Link>
+              <SignOutButton variant="ghost" />
             </div>
           </div>
         </div>
