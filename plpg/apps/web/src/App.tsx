@@ -68,7 +68,7 @@ function App() {
       signInUrl="/sign-in"
       signUpUrl="/sign-up"
       afterSignInUrl="/dashboard"
-      afterSignUpUrl="/dashboard"
+      afterSignUpUrl="/onboarding"
     >
       <QueryClientProvider client={queryClient}>
         <AppRoutes />
