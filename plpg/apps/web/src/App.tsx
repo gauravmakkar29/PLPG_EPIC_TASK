@@ -6,6 +6,7 @@ import Landing from './pages/Landing';
 import Dashboard from './pages/Dashboard';
 import Onboarding from './pages/Onboarding';
 import Settings from './pages/Settings';
+import { ProfilePage } from './pages/Settings/Profile';
 import SignIn from './pages/SignIn';
 import SignUp from './pages/SignUp';
 import NotFound from './pages/NotFound';
@@ -65,6 +66,16 @@ function AppRoutes() {
           <ProtectedRoute>
             <OnboardingGuard>
               <Settings />
+            </OnboardingGuard>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/settings/profile"
+        element={
+          <ProtectedRoute>
+            <OnboardingGuard>
+              <ProfilePage />
             </OnboardingGuard>
           </ProtectedRoute>
         }

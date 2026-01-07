@@ -98,7 +98,28 @@ export default function Settings() {
         <div className="max-w-2xl mx-auto space-y-6">
           {/* Profile Section */}
           <div className="bg-white rounded-xl shadow-sm p-6">
-            <h2 className="text-xl font-semibold text-secondary-900 mb-4">Profile</h2>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-semibold text-secondary-900">Profile</h2>
+              <button
+                onClick={() => navigate('/settings/profile')}
+                className="inline-flex items-center gap-2 px-4 py-2 text-primary-600 bg-primary-50 rounded-lg hover:bg-primary-100 transition-colors font-medium"
+              >
+                <svg
+                  className="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+                  />
+                </svg>
+                Edit Profile
+              </button>
+            </div>
             <div className="flex items-center gap-4">
               {user?.imageUrl ? (
                 <img
