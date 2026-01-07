@@ -1,8 +1,10 @@
-import pinoHttp from 'pino-http';
-import type { Request, Response } from 'express';
+import pinoHttpLib from 'pino-http';
+import type { Request, Response, RequestHandler } from 'express';
 import { logger } from '../lib/logger.js';
 
-export const requestLogger = pinoHttp({
+// Handle ESM/CommonJS interop for pino-http
+const pinoHttp = (pinoHttpLib as any).default || pinoHttpLib;
+export const requestLogger: RequestHandler = (pinoHttp as typeof import('pino-http').default)({
   logger,
   autoLogging: {
     ignore: (req: Request) => req.url === '/v1/health',

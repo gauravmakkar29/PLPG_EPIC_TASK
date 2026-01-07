@@ -289,6 +289,7 @@ export async function restartOnboarding(
         customRole: updatedState.customRole,
         targetRole: updatedState.targetRole,
         weeklyHours: updatedState.weeklyHours,
+        existingSkills: updatedState.existingSkills || [],
       },
     };
 

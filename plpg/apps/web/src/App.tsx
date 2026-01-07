@@ -15,9 +15,18 @@ import OnboardingGuard from './components/OnboardingGuard';
 
 const clerkPubKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
 
-if (!clerkPubKey) {
-  throw new Error('Missing VITE_CLERK_PUBLISHABLE_KEY environment variable');
-}
+// Check if it's a placeholder or empty - if so, this component shouldn't be used
+// (DevApp should be used instead via main.tsx)
+const isPlaceholderOrEmpty = !clerkPubKey || 
+                              clerkPubKey === 'pk_test_...' || 
+                              clerkPubKey === 'pk_test_placeholder' ||
+                              (typeof clerkPubKey === 'string' && clerkPubKey.includes('placeholder'));
+
+// Never throw error - main.tsx handles routing to DevApp for placeholders/empty keys
+// Provide a safe default to prevent Clerk errors if App.tsx is accidentally used
+const safeClerkKey = isPlaceholderOrEmpty || !clerkPubKey 
+  ? 'pk_test_placeholder' 
+  : clerkPubKey;
 
 function LoadingSpinner() {
   return (
@@ -88,7 +97,7 @@ function AppRoutes() {
 function App() {
   return (
     <ClerkProvider
-      publishableKey={clerkPubKey}
+      publishableKey={safeClerkKey}
       signInUrl="/sign-in"
       signUpUrl="/sign-up"
       afterSignInUrl="/dashboard"

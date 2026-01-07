@@ -1,7 +1,9 @@
-import pino from 'pino';
+import pinoLib from 'pino';
 import { env } from './env.js';
 
-export const logger = pino({
+// Handle ESM/CommonJS interop for pino
+const pino = (pinoLib as any).default || pinoLib;
+export const logger = (pino as typeof import('pino').default)({
   level: env.NODE_ENV === 'production' ? 'info' : 'debug',
   transport:
     env.NODE_ENV === 'development'
