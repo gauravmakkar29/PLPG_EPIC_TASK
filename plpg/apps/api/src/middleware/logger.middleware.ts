@@ -1,8 +1,10 @@
-import pinoHttp from 'pino-http';
-import type { Request, Response } from 'express';
+import pinoHttpModule from 'pino-http';
+import type { Request, Response, NextFunction } from 'express';
 import { logger } from '../lib/logger.js';
 
-export const requestLogger = pinoHttp({
+const pinoHttp = pinoHttpModule.default || pinoHttpModule;
+
+export const requestLogger: (req: Request, res: Response, next: NextFunction) => void = pinoHttp({
   logger,
   autoLogging: {
     ignore: (req: Request) => req.url === '/v1/health',

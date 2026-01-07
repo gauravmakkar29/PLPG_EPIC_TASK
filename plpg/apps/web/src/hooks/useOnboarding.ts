@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@clerk/clerk-react';
-import type { OnboardingStateResponse, Step1Data, Step2Data, Step3Data } from '@plpg/shared';
+import type { OnboardingStateResponse, Step1Data, Step2Data, Step3Data, Step4Data } from '@plpg/shared';
 import api from '../services/api';
 
 // Query keys
@@ -17,7 +17,7 @@ async function fetchOnboardingState(getToken: () => Promise<string | null>): Pro
 
 async function saveStepData(
   step: number,
-  data: Step1Data | Step2Data | Step3Data,
+  data: Step1Data | Step2Data | Step3Data | Step4Data,
   getToken: () => Promise<string | null>
 ): Promise<OnboardingStateResponse> {
   const token = await getToken();
@@ -92,7 +92,7 @@ export function useSaveStep() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ step, data }: { step: number; data: Step1Data | Step2Data | Step3Data }) =>
+    mutationFn: ({ step, data }: { step: number; data: Step1Data | Step2Data | Step3Data | Step4Data }) =>
       saveStepData(step, data, getToken),
     onSuccess: (data) => {
       queryClient.setQueryData(ONBOARDING_KEY, data);

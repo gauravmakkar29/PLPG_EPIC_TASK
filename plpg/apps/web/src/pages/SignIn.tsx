@@ -17,17 +17,6 @@ export default function SignIn() {
     }
   }, [isSignedIn]);
 
-  // Handle sign-in completion - track analytics event
-  // Clerk will handle the redirect via afterSignInUrl
-  // Note: afterSignInUrl redirects to /dashboard, but OnboardingGuard will
-  // redirect to /onboarding if onboarding is incomplete
-  const handleSignInComplete = () => {
-    track('login_completed', {
-      page_path: '/sign-in',
-      timestamp: new Date().toISOString(),
-    });
-  };
-
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-primary-50 to-white">
       <div className="w-full max-w-md">
@@ -36,7 +25,6 @@ export default function SignIn() {
           path="/sign-in"
           signUpUrl="/sign-up"
           afterSignInUrl="/dashboard"
-          afterSignIn={handleSignInComplete}
           appearance={{
             elements: {
               rootBox: 'mx-auto',

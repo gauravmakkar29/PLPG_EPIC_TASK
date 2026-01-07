@@ -15,15 +15,6 @@ export default function SignUp() {
     }
   }, [isSignedIn]);
 
-  // Handle signup completion - track analytics event
-  // Clerk will handle the redirect via afterSignUpUrl
-  const handleSignUpComplete = () => {
-    track('signup_completed', {
-      page_path: '/sign-up',
-      timestamp: new Date().toISOString(),
-    });
-  };
-
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-primary-50 to-white">
       <div className="w-full max-w-md">
@@ -32,7 +23,6 @@ export default function SignUp() {
           path="/sign-up"
           signInUrl="/sign-in"
           afterSignUpUrl="/onboarding"
-          afterSignUp={handleSignUpComplete}
           appearance={{
             elements: {
               rootBox: 'mx-auto',

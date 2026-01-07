@@ -40,7 +40,7 @@ export function EmailVerificationBanner() {
       setResendSuccess(false);
       
       // Prepare verification email using Clerk's API
-      await primaryEmail.prepareVerification({ strategy: 'email_link' });
+      await primaryEmail.prepareVerification({ strategy: 'email_link', redirectUrl: window.location.origin });
       
       setResendSuccess(true);
       // Clear success message after 3 seconds
