@@ -1,4 +1,4 @@
-import type { SubscriptionPlan } from '../constants/subscription';
+import type { SubscriptionPlan } from '../constants/subscription.js';
 
 export interface User {
   id: string;

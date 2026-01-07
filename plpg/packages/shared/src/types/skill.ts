@@ -1,4 +1,4 @@
-import type { Phase } from '../constants/phases';
+import type { Phase } from '../constants/phases.js';
 
 export interface Skill {
   id: string;

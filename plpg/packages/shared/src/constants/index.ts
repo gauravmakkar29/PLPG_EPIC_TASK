@@ -1,2 +1,2 @@
-export * from './phases';
-export * from './subscription';
+export * from './phases.js';
+export * from './subscription.js';

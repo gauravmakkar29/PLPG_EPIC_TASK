@@ -1,9 +1,5 @@
-<<<<<<< HEAD:plpg/apps/web/src/components/onboarding/Step5Summary.tsx
-import { CURRENT_ROLES, TARGET_ROLES, PREREQUISITE_SKILLS } from '@plpg/shared';
-=======
 import { useState } from 'react';
-import { CURRENT_ROLES, TARGET_ROLES, WEEKLY_HOURS_OPTIONS } from '@plpg/shared';
->>>>>>> a974aacb873fcc97a5f18555b5968d8dd9bf181b:plpg/apps/web/src/components/onboarding/Step4Summary.tsx
+import { CURRENT_ROLES, TARGET_ROLES, PREREQUISITE_SKILLS } from '@plpg/shared';
 import { cn } from '../../lib/utils';
 
 interface Step5SummaryProps {
@@ -27,13 +23,10 @@ export default function Step5Summary({
   onEdit,
   onComplete,
   isLoading = false,
-<<<<<<< HEAD:plpg/apps/web/src/components/onboarding/Step5Summary.tsx
-}: Step5SummaryProps) {
-=======
   isEditMode = false,
-}: Step4SummaryProps) {
+}: Step5SummaryProps) {
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
->>>>>>> a974aacb873fcc97a5f18555b5968d8dd9bf181b:plpg/apps/web/src/components/onboarding/Step4Summary.tsx
+
   const currentRoleData = CURRENT_ROLES.find((r) => r.value === currentRole);
   const targetRoleData = TARGET_ROLES.find((r) => r.value === targetRole);
 
@@ -199,24 +192,6 @@ export default function Step5Summary({
             </div>
           </div>
         )}
-<<<<<<< HEAD:plpg/apps/web/src/components/onboarding/Step5Summary.tsx
-=======
-
-        {/* Skills to Skip - placeholder for future implementation */}
-        <div className="bg-white rounded-xl border border-secondary-200 p-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-yellow-100 flex items-center justify-center">
-              <svg className="w-5 h-5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
-              </svg>
-            </div>
-            <div>
-              <div className="text-sm text-secondary-500">Skills to Skip</div>
-              <div className="font-semibold text-secondary-900">None</div>
-              <div className="text-xs text-secondary-400">You can skip skills later during your journey</div>
-            </div>
-          </div>
-        </div>
 
         {/* Warning message for edit mode */}
         {isEditMode && (
@@ -246,7 +221,6 @@ export default function Step5Summary({
             </div>
           </div>
         )}
->>>>>>> a974aacb873fcc97a5f18555b5968d8dd9bf181b:plpg/apps/web/src/components/onboarding/Step4Summary.tsx
       </div>
 
       <div className="pt-4">

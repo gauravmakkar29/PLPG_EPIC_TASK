@@ -1,7 +1,7 @@
 import type { Request, Response, NextFunction } from 'express';
 import type { Session } from '@plpg/shared';
 import { Webhook } from 'svix';
-import type { WebhookEvent } from 'svix';
+import type { WebhookEvent } from '@clerk/backend';
 import { prisma } from '../lib/prisma.js';
 import { logger } from '../lib/logger.js';
 import { env } from '../lib/env.js';
@@ -40,7 +40,7 @@ export async function getSession(
 
 export async function clerkWebhook(
   req: Request,
-  res: Response<{ received: boolean }>,
+  res: Response,
   next: NextFunction
 ): Promise<void> {
   try {

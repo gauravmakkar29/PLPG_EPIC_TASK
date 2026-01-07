@@ -1,12 +1,13 @@
 import pinoHttp from 'pino-http';
+import type { Request, Response } from 'express';
 import { logger } from '../lib/logger.js';
 
 export const requestLogger = pinoHttp({
   logger,
   autoLogging: {
-    ignore: (req) => req.url === '/v1/health',
+    ignore: (req: Request) => req.url === '/v1/health',
   },
-  customLogLevel: (req, res, err) => {
+  customLogLevel: (_req: Request, res: Response, err: Error | undefined) => {
     if (res.statusCode >= 400 && res.statusCode < 500) {
       return 'warn';
     } else if (res.statusCode >= 500 || err) {
@@ -14,10 +15,10 @@ export const requestLogger = pinoHttp({
     }
     return 'info';
   },
-  customSuccessMessage: (req, res) => {
+  customSuccessMessage: (req: Request, res: Response) => {
     return `${req.method} ${req.url} ${res.statusCode}`;
   },
-  customErrorMessage: (req, res) => {
+  customErrorMessage: (req: Request, res: Response) => {
     return `${req.method} ${req.url} ${res.statusCode}`;
   },
 });

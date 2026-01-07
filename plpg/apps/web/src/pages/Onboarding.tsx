@@ -4,14 +4,9 @@ import OnboardingLayout from '../components/onboarding/OnboardingLayout';
 import Step1CurrentRole from '../components/onboarding/Step1CurrentRole';
 import Step2TargetRole from '../components/onboarding/Step2TargetRole';
 import Step3WeeklyTime from '../components/onboarding/Step3WeeklyTime';
-<<<<<<< HEAD
 import Step4ExistingSkills from '../components/onboarding/Step4ExistingSkills';
 import Step5Summary from '../components/onboarding/Step5Summary';
-import { useOnboardingState, useSaveStep, useSkipOnboarding, useCompleteOnboarding, useGotoStep } from '../hooks/useOnboarding';
-=======
-import Step4Summary from '../components/onboarding/Step4Summary';
 import { useOnboardingState, useSaveStep, useSkipOnboarding, useCompleteOnboarding, useGotoStep, useRestartOnboarding } from '../hooks/useOnboarding';
->>>>>>> a974aacb873fcc97a5f18555b5968d8dd9bf181b
 import { track } from '../lib/analytics';
 
 export default function Onboarding() {
@@ -76,19 +71,12 @@ export default function Onboarding() {
 
   const handleGeneratePath = () => {
     // Track analytics event before completing
-<<<<<<< HEAD
-    track('onboarding_completed', {
-      currentRole: onboardingState?.data.currentRole,
-      targetRole: onboardingState?.data.targetRole,
-      weeklyHours: onboardingState?.data.weeklyHours,
-      existingSkillsCount: onboardingState?.data.existingSkills?.length || 0,
-    });
-=======
     if (isEditMode) {
       track('preferences_updated', {
         currentRole: onboardingState?.data.currentRole,
         targetRole: onboardingState?.data.targetRole,
         weeklyHours: onboardingState?.data.weeklyHours,
+        existingSkillsCount: onboardingState?.data.existingSkills?.length || 0,
         isReOnboarding: true,
       });
     } else {
@@ -96,9 +84,9 @@ export default function Onboarding() {
         currentRole: onboardingState?.data.currentRole,
         targetRole: onboardingState?.data.targetRole,
         weeklyHours: onboardingState?.data.weeklyHours,
+        existingSkillsCount: onboardingState?.data.existingSkills?.length || 0,
       });
     }
->>>>>>> a974aacb873fcc97a5f18555b5968d8dd9bf181b
 
     completeOnboarding.mutate(undefined, {
       onSuccess: () => {
@@ -131,7 +119,7 @@ export default function Onboarding() {
   }
 
   // In edit mode, if onboarding is complete but we just entered, restart it
-  if (isEditMode && (onboardingState?.isComplete || onboardingState?.isSkipped) && currentStep === 4) {
+  if (isEditMode && (onboardingState?.isComplete || onboardingState?.isSkipped) && currentStep === 5) {
     // Restart onboarding to step 1 for editing
     restartOnboarding.mutate();
   }

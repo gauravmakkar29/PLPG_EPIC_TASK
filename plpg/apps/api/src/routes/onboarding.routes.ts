@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router, type IRouter } from 'express';
 import {
   getOnboardingState,
   saveStep,
@@ -11,7 +11,7 @@ import { requireAuth } from '../middleware/auth.middleware.js';
 import { validate } from '../middleware/validate.middleware.js';
 import { step1Schema, step2Schema, step3Schema, step4Schema, stepParamsSchema } from '@plpg/shared';
 
-const router = Router();
+const router: IRouter = Router();
 
 // All onboarding routes require authentication
 router.use(requireAuth);
@@ -20,7 +20,7 @@ router.use(requireAuth);
 router.get('/', getOnboardingState);
 
 // Save step data - validation depends on step number
-router.patch('/step/:step', validate({ params: stepParamsSchema }), async (req, res, next) => {
+router.patch('/step/:step', validate({ params: stepParamsSchema }), async (req, _res, next) => {
   const step = parseInt(req.params.step, 10);
 
   // Validate body based on step
