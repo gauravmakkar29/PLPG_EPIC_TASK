@@ -23,6 +23,7 @@
     "helmet": "^7.1.0",
     "pino": "^8.18.0",
     "pino-http": "^9.0.0",
+    "svix": "^1.38.0",
     "zod": "^3.22.4"
   },
   "devDependencies": {

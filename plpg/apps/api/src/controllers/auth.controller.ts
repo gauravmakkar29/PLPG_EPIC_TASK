@@ -1,7 +1,10 @@
 import type { Request, Response, NextFunction } from 'express';
 import type { Session } from '@plpg/shared';
+import { Webhook } from 'svix';
+import type { WebhookEvent } from 'svix';
 import { prisma } from '../lib/prisma.js';
 import { logger } from '../lib/logger.js';
+import { env } from '../lib/env.js';
 
 export async function getSession(
   req: Request,
@@ -41,13 +44,52 @@ export async function clerkWebhook(
   next: NextFunction
 ): Promise<void> {
   try {
-    const event = req.body;
+    // Verify webhook signature if CLERK_WEBHOOK_SECRET is configured
+    let evt: WebhookEvent;
+    
+    if (env.CLERK_WEBHOOK_SECRET) {
+      const WEBHOOK_SECRET = env.CLERK_WEBHOOK_SECRET;
+      const wh = new Webhook(WEBHOOK_SECRET);
+      
+      // Get headers
+      const svixId = req.headers['svix-id'] as string;
+      const svixTimestamp = req.headers['svix-timestamp'] as string;
+      const svixSignature = req.headers['svix-signature'] as string;
 
-    logger.info({ type: event.type }, 'Received Clerk webhook');
+      if (!svixId || !svixTimestamp || !svixSignature) {
+        logger.warn('Missing svix headers in webhook request');
+        res.status(400).json({ error: 'Invalid signature' });
+        return;
+      }
 
-    switch (event.type) {
+      const headers = {
+        'svix-id': svixId,
+        'svix-timestamp': svixTimestamp,
+        'svix-signature': svixSignature,
+      };
+
+      // Verify signature
+      try {
+        // svix expects the raw body as a string
+        const payload = JSON.stringify(req.body);
+        evt = wh.verify(payload, headers) as WebhookEvent;
+      } catch (err) {
+        logger.warn({ error: err }, 'Invalid webhook signature');
+        res.status(400).json({ error: 'Invalid signature' });
+        return;
+      }
+    } else {
+      // In development, allow webhooks without signature verification
+      // but log a warning
+      logger.warn('CLERK_WEBHOOK_SECRET not configured, skipping signature verification');
+      evt = req.body as WebhookEvent;
+    }
+
+    logger.info({ type: evt.type }, 'Received Clerk webhook');
+
+    switch (evt.type) {
       case 'user.created': {
-        const { id, email_addresses, first_name, last_name, image_url } = event.data;
+        const { id, email_addresses, first_name, last_name, image_url } = evt.data;
         const email = email_addresses[0]?.email_address;
 
         if (email) {
@@ -63,12 +105,24 @@ export async function clerkWebhook(
           });
 
           logger.info({ clerkId: id, email }, 'Created new user from Clerk webhook');
+          
+          // Track signup_completed analytics event
+          // Note: Full analytics integration will be added in Epic 9
+          logger.info(
+            { 
+              event: 'signup_completed',
+              clerkId: id,
+              email,
+              timestamp: new Date().toISOString()
+            },
+            'Analytics: signup_completed'
+          );
         }
         break;
       }
 
       case 'user.updated': {
-        const { id, email_addresses, first_name, last_name, image_url } = event.data;
+        const { id, email_addresses, first_name, last_name, image_url } = evt.data;
         const email = email_addresses[0]?.email_address;
 
         await prisma.user.update({
@@ -85,7 +139,7 @@ export async function clerkWebhook(
       }
 
       case 'user.deleted': {
-        const { id } = event.data;
+        const { id } = evt.data;
 
         await prisma.user.delete({
           where: { clerkId: id },
@@ -96,11 +150,12 @@ export async function clerkWebhook(
       }
 
       default:
-        logger.debug({ type: event.type }, 'Unhandled webhook event type');
+        logger.debug({ type: evt.type }, 'Unhandled webhook event type');
     }
 
-    res.json({ received: true });
+    res.status(200).json({ received: true });
   } catch (error) {
+    logger.error({ error }, 'Error processing Clerk webhook');
     next(error);
   }
 }
