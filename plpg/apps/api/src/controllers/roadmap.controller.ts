@@ -3,6 +3,10 @@ import { analyzeGap, type GapAnalysisResult } from '../services/gapAnalysis.serv
 import { sequenceSkills, type SequencingResult } from '../services/sequencing.service.js';
 import { generateRoadmap, type RoadmapGenerationResult } from '../services/roadmapGeneration.service.js';
 import { getRoadmap, type RoadmapResponse } from '../services/roadmapRetrieval.service.js';
+import {
+  recalculateRoadmapTime,
+  updateModuleSkipStatus,
+} from '../services/roadmap.service.js';
 import { prisma } from '../lib/prisma.js';
 import { logger } from '../lib/logger.js';
 import { BadRequestError, NotFoundError } from '@plpg/shared';
@@ -87,28 +91,31 @@ export async function getSequencedSkills(
 }
 
 /**
- * Generate roadmap for the authenticated user
+ * Generate a roadmap for the current user
  * POST /v1/roadmap/generate
- * Idempotent: returns existing roadmap if one already exists
  */
-export async function generateRoadmapEndpoint(
+export async function createRoadmap(
   req: Request,
   res: Response<{ success: true; data: RoadmapGenerationResult }>,
   next: NextFunction
 ): Promise<void> {
   try {
     const userId = req.user!.id;
+    const { sourceRole, targetRole, title, description } = req.body;
 
-    const result = await generateRoadmap(userId);
+    if (!sourceRole || !targetRole) {
+      throw new BadRequestError('sourceRole and targetRole are required');
+    }
 
-    // Serialize Date to ISO string for JSON response
-    res.status(201).json({
-      success: true,
-      data: {
-        ...result,
-        projectedCompletion: result.projectedCompletion.toISOString(),
-      },
+    const result = await generateRoadmap({
+      userId,
+      sourceRole,
+      targetRole,
+      title,
+      description,
     });
+
+    res.status(201).json({ success: true, data: result });
   } catch (error) {
     logger.error({ error, userId: req.user?.id }, 'Error generating roadmap');
     next(error);
@@ -231,3 +238,94 @@ export async function getRoadmapById(
   }
 }
 
+/**
+ * Recalculate total estimated hours for a roadmap
+ * POST /v1/roadmap/:id/recalculate-time
+ */
+export async function recalculateTime(
+  req: Request,
+  res: Response<{ success: true; data: { totalEstimatedHours: number } }>,
+  next: NextFunction
+): Promise<void> {
+  try {
+    const userId = req.user!.id;
+    const roadmapId = req.params.id;
+
+    // Verify roadmap belongs to user
+    const roadmap = await prisma.roadmap.findFirst({
+      where: {
+        id: roadmapId,
+        userId,
+      },
+    });
+
+    if (!roadmap) {
+      throw new BadRequestError('Roadmap not found');
+    }
+
+    const totalEstimatedHours = await recalculateRoadmapTime(roadmapId);
+
+    res.json({
+      success: true,
+      data: { totalEstimatedHours },
+    });
+  } catch (error) {
+    logger.error({ error, userId: req.user?.id }, 'Error recalculating roadmap time');
+    next(error);
+  }
+}
+
+/**
+ * Update a module's skip status
+ * PATCH /v1/roadmap/:id/modules/:moduleId/skip
+ */
+export async function updateModuleSkip(
+  req: Request,
+  res: Response<{ success: true; data: { totalEstimatedHours: number } }>,
+  next: NextFunction
+): Promise<void> {
+  try {
+    const userId = req.user!.id;
+    const roadmapId = req.params.id;
+    const moduleId = req.params.moduleId;
+    const { isSkipped } = req.body;
+
+    if (typeof isSkipped !== 'boolean') {
+      throw new BadRequestError('isSkipped must be a boolean');
+    }
+
+    // Verify roadmap belongs to user
+    const roadmap = await prisma.roadmap.findFirst({
+      where: {
+        id: roadmapId,
+        userId,
+      },
+    });
+
+    if (!roadmap) {
+      throw new BadRequestError('Roadmap not found');
+    }
+
+    // Verify module belongs to roadmap
+    const module = await prisma.roadmapModule.findFirst({
+      where: {
+        id: moduleId,
+        roadmapId,
+      },
+    });
+
+    if (!module) {
+      throw new BadRequestError('Module not found');
+    }
+
+    const totalEstimatedHours = await updateModuleSkipStatus(roadmapId, moduleId, isSkipped);
+
+    res.json({
+      success: true,
+      data: { totalEstimatedHours },
+    });
+  } catch (error) {
+    logger.error({ error, userId: req.user?.id }, 'Error updating module skip status');
+    next(error);
+  }
+}
