@@ -1,5 +1,11 @@
 import type { Phase } from '../constants/phases.js';
 
+export interface PrerequisiteSkill {
+  id: string;
+  name: string;
+  slug: string;
+}
+
 export interface Skill {
   id: string;
   name: string;
@@ -10,6 +16,7 @@ export interface Skill {
   estimatedHours: number;
   isOptional: boolean;
   sequenceOrder: number;
+  prerequisites?: PrerequisiteSkill[];
   createdAt: Date;
   updatedAt: Date;
 }

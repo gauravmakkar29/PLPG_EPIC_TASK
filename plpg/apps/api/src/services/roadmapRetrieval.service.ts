@@ -7,6 +7,12 @@ import {
   PHASE_DESCRIPTIONS,
 } from '@plpg/shared/constants';
 
+export interface PrerequisiteSkill {
+  id: string;
+  name: string;
+  slug: string;
+}
+
 export interface RoadmapModuleWithProgress {
   id: string;
   skillId: string;
@@ -19,8 +25,10 @@ export interface RoadmapModuleWithProgress {
     name: string;
     slug: string;
     description: string;
+    whyThisMatters: string | null;
     phase: string;
     estimatedHours: number;
+    prerequisites: PrerequisiteSkill[];
     resources: Array<{
       id: string;
       title: string;
@@ -129,6 +137,18 @@ export async function getRoadmap(userId: string): Promise<RoadmapResponse> {
                   quality: 'desc', // Order resources by quality (best first)
                 },
               },
+              // Include skill dependencies to get prerequisites
+              dependencies: {
+                include: {
+                  dependsOn: {
+                    select: {
+                      id: true,
+                      name: true,
+                      slug: true,
+                    },
+                  },
+                },
+              },
             },
           },
           progress: {
@@ -163,6 +183,13 @@ export async function getRoadmap(userId: string): Promise<RoadmapResponse> {
     if (!phaseMap.has(phase)) {
       phaseMap.set(phase, []);
     }
+    // Map dependencies to prerequisites
+    const prerequisites = (module.skill.dependencies || []).map((dep: { dependsOn: { id: string; name: string; slug: string } }) => ({
+      id: dep.dependsOn.id,
+      name: dep.dependsOn.name,
+      slug: dep.dependsOn.slug,
+    }));
+
     phaseMap.get(phase)!.push({
       id: module.id,
       skillId: module.skillId,
@@ -175,8 +202,10 @@ export async function getRoadmap(userId: string): Promise<RoadmapResponse> {
         name: module.skill.name,
         slug: module.skill.slug,
         description: module.skill.description,
+        whyThisMatters: module.skill.whyThisMatters,
         phase: module.skill.phase,
         estimatedHours: module.skill.estimatedHours,
+        prerequisites,
         resources: module.skill.resources.map((r: { id: string; title: string; url: string; type: string; provider: string | null; durationMinutes: number | null; isFree: boolean; quality: number }) => ({
           id: r.id,
           title: r.title,

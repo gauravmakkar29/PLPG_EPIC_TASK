@@ -111,6 +111,14 @@ export default function Dashboard() {
     }
   }, [selectedModuleIndex, sortedModules]);
 
+  // Navigate to a module by its skillId (for prerequisite links)
+  const handleNavigateToModule = useCallback((skillId: string) => {
+    const targetModule = sortedModules.find((m) => m.skillId === skillId);
+    if (targetModule && !targetModule.isLocked) {
+      setSelectedModuleId(targetModule.id);
+    }
+  }, [sortedModules]);
+
   // Calculate stats from roadmap
   const totalModules = roadmap?.modules?.length ?? 0;
   const completedModules = roadmap?.modules?.filter(
@@ -255,6 +263,7 @@ export default function Dashboard() {
                     onMarkComplete={handleMarkComplete}
                     onNavigatePrevious={handleNavigatePrevious}
                     onNavigateNext={handleNavigateNext}
+                    onNavigateToModule={handleNavigateToModule}
                     isFirst={selectedModuleIndex === 0}
                     isLast={selectedModuleIndex === sortedModules.length - 1 || (selectedModuleIndex < sortedModules.length - 1 && sortedModules[selectedModuleIndex + 1].isLocked)}
                     isMarkingComplete={isMarkingComplete}

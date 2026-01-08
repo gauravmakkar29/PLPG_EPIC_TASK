@@ -1,8 +1,9 @@
 import { useEffect, useCallback, useRef } from 'react';
 import { cn } from '../../../lib/utils';
 import { track } from '../../../lib/analytics';
-import type { RoadmapModuleWithSkill, Resource, ResourceType } from '@plpg/shared';
+import type { RoadmapModuleWithSkill, Resource, ResourceType, PrerequisiteSkill } from '@plpg/shared';
 import { PHASE_LABELS, type Phase } from '@plpg/shared';
+import { WhyThisMatters } from '../WhyThisMatters';
 
 export interface ModuleDetailProps {
   module: RoadmapModuleWithSkill;
@@ -11,6 +12,7 @@ export interface ModuleDetailProps {
   onMarkComplete: () => void;
   onNavigatePrevious?: () => void;
   onNavigateNext?: () => void;
+  onNavigateToModule?: (skillId: string) => void;
   isFirst: boolean;
   isLast: boolean;
   isMarkingComplete?: boolean;
@@ -141,6 +143,7 @@ export function ModuleDetail({
   onMarkComplete,
   onNavigatePrevious,
   onNavigateNext,
+  onNavigateToModule,
   isFirst,
   isLast,
   isMarkingComplete = false,
@@ -235,23 +238,11 @@ export function ModuleDetail({
         </div>
 
         {/* Why This Matters */}
-        {module.skill.whyThisMatters && (
-          <div className="bg-primary-50 border border-primary-100 rounded-lg p-4">
-            <div className="flex items-start gap-3">
-              <div className="p-1.5 bg-primary-100 rounded-lg text-primary-600 shrink-0">
-                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-                </svg>
-              </div>
-              <div>
-                <h3 className="font-semibold text-primary-800 mb-1">Why This Matters</h3>
-                <p className="text-sm text-primary-700 leading-relaxed">
-                  {module.skill.whyThisMatters}
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
+        <WhyThisMatters
+          content={module.skill.whyThisMatters}
+          prerequisites={(module.skill as { prerequisites?: PrerequisiteSkill[] }).prerequisites}
+          onPrerequisiteClick={onNavigateToModule}
+        />
 
         {/* Resources */}
         {resources.length > 0 && (
