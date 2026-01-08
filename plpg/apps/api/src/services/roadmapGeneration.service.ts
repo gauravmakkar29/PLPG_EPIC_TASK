@@ -2,7 +2,6 @@ import { prisma } from '../lib/prisma.js';
 import { logger } from '../lib/logger.js';
 import { analyzeGap } from './gapAnalysis.service.js';
 import { sequenceSkills } from './sequencing.service.js';
-import type { Skill, SkillDependency } from '@plpg/shared';
 
 export interface RoadmapGenerationResult {
   roadmapId: string;
@@ -106,7 +105,7 @@ export async function generateRoadmap(userId: string): Promise<RoadmapGeneration
     throw new Error('Target role and weekly hours are required for roadmap generation');
   }
 
-  const { targetRole, weeklyHours, currentRole, existingSkills } = onboardingState;
+  const { targetRole, weeklyHours, currentRole } = onboardingState;
 
   // 1. Perform gap analysis
   const gapAnalysis = await analyzeGap(userId, targetRole);

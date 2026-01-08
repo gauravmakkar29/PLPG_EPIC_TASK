@@ -5,6 +5,7 @@ export interface Skill {
   name: string;
   slug: string;
   description: string;
+  whyThisMatters: string | null;
   phase: Phase;
   estimatedHours: number;
   isOptional: boolean;

@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import {
   buildDependencyGraph,
   detectCircularDependency,
@@ -21,6 +21,7 @@ describe('Sequencing Service', () => {
     name,
     slug: id,
     description: `${name} description`,
+    whyThisMatters: null,
     phase: phase as any,
     estimatedHours: 10,
     isOptional: false,
@@ -108,7 +109,7 @@ describe('Sequencing Service', () => {
       const skills: Skill[] = [
         createMockSkill('skill-a', 'Skill A', Phase.FOUNDATION, 1),
         createMockSkill('skill-b', 'Skill B', Phase.FOUNDATION, 2),
-        createMockSkill('skill-c', 'Skill C', Phase.INTERMEDIATE, 3),
+        createMockSkill('skill-c', 'Skill C', Phase.CORE_ML, 3),
       ];
 
       const graph = new Map<string, Set<string>>();
@@ -128,7 +129,7 @@ describe('Sequencing Service', () => {
       const skills: Skill[] = [
         createMockSkill('skill-a', 'Skill A', Phase.FOUNDATION, 1),
         createMockSkill('skill-b', 'Skill B', Phase.FOUNDATION, 2),
-        createMockSkill('skill-c', 'Skill C', Phase.INTERMEDIATE, 3),
+        createMockSkill('skill-c', 'Skill C', Phase.CORE_ML, 3),
       ];
 
       const graph = new Map<string, Set<string>>();
@@ -151,7 +152,7 @@ describe('Sequencing Service', () => {
       const skills: Skill[] = [
         createMockSkill('skill-a', 'Skill A', Phase.FOUNDATION, 2),
         createMockSkill('skill-b', 'Skill B', Phase.FOUNDATION, 1),
-        createMockSkill('skill-c', 'Skill C', Phase.INTERMEDIATE, 3),
+        createMockSkill('skill-c', 'Skill C', Phase.CORE_ML, 3),
       ];
 
       const graph = new Map<string, Set<string>>();
@@ -181,11 +182,11 @@ describe('Sequencing Service', () => {
           sequenceOrder: 2,
         },
         {
-          ...createMockSkill('skill-3', 'Intermediate Skill', Phase.INTERMEDIATE),
+          ...createMockSkill('skill-3', 'Intermediate Skill', Phase.CORE_ML),
           sequenceOrder: 3,
         },
         {
-          ...createMockSkill('skill-4', 'Advanced Skill', Phase.ADVANCED),
+          ...createMockSkill('skill-4', 'Advanced Skill', Phase.DEEP_LEARNING),
           sequenceOrder: 4,
         },
       ];
@@ -195,9 +196,9 @@ describe('Sequencing Service', () => {
       expect(phaseGroups).toHaveLength(3);
       expect(phaseGroups[0].phase).toBe(Phase.FOUNDATION);
       expect(phaseGroups[0].skills).toHaveLength(2);
-      expect(phaseGroups[1].phase).toBe(Phase.INTERMEDIATE);
+      expect(phaseGroups[1].phase).toBe(Phase.CORE_ML);
       expect(phaseGroups[1].skills).toHaveLength(1);
-      expect(phaseGroups[2].phase).toBe(Phase.ADVANCED);
+      expect(phaseGroups[2].phase).toBe(Phase.DEEP_LEARNING);
       expect(phaseGroups[2].skills).toHaveLength(1);
     });
 
@@ -208,11 +209,11 @@ describe('Sequencing Service', () => {
           sequenceOrder: 1,
         },
         {
-          ...createMockSkill('skill-2', 'Intermediate', Phase.INTERMEDIATE),
+          ...createMockSkill('skill-2', 'Intermediate', Phase.CORE_ML),
           sequenceOrder: 2,
         },
         {
-          ...createMockSkill('skill-3', 'Advanced', Phase.ADVANCED),
+          ...createMockSkill('skill-3', 'Advanced', Phase.DEEP_LEARNING),
           sequenceOrder: 3,
         },
       ];
@@ -220,8 +221,8 @@ describe('Sequencing Service', () => {
       const phaseGroups = groupIntoPhases(sequencedSkills);
 
       expect(phaseGroups[0].phase).toBe(Phase.FOUNDATION);
-      expect(phaseGroups[1].phase).toBe(Phase.INTERMEDIATE);
-      expect(phaseGroups[2].phase).toBe(Phase.ADVANCED);
+      expect(phaseGroups[1].phase).toBe(Phase.CORE_ML);
+      expect(phaseGroups[2].phase).toBe(Phase.DEEP_LEARNING);
     });
   });
 
@@ -230,7 +231,7 @@ describe('Sequencing Service', () => {
       const skills: Skill[] = [
         createMockSkill('skill-a', 'Skill A', Phase.FOUNDATION, 1),
         createMockSkill('skill-b', 'Skill B', Phase.FOUNDATION, 2),
-        createMockSkill('skill-c', 'Skill C', Phase.INTERMEDIATE, 3),
+        createMockSkill('skill-c', 'Skill C', Phase.CORE_ML, 3),
       ];
 
       const dependencies: SkillDependency[] = [
@@ -262,7 +263,7 @@ describe('Sequencing Service', () => {
       const skills: Skill[] = [
         createMockSkill('skill-a', 'Skill A', Phase.FOUNDATION, 1),
         createMockSkill('skill-b', 'Skill B', Phase.FOUNDATION, 2),
-        createMockSkill('skill-c', 'Skill C', Phase.INTERMEDIATE, 3),
+        createMockSkill('skill-c', 'Skill C', Phase.CORE_ML, 3),
       ];
 
       const dependencies: SkillDependency[] = [
@@ -325,8 +326,8 @@ describe('Sequencing Service', () => {
         createMockSkill('preprocessing', 'Data Preprocessing', Phase.FOUNDATION, 4),
         createMockSkill('linear-algebra', 'Linear Algebra', Phase.FOUNDATION, 5),
         createMockSkill('statistics', 'Statistics', Phase.FOUNDATION, 6),
-        createMockSkill('ml-fundamentals', 'ML Fundamentals', Phase.INTERMEDIATE, 7),
-        createMockSkill('supervised-learning', 'Supervised Learning', Phase.INTERMEDIATE, 8),
+        createMockSkill('ml-fundamentals', 'ML Fundamentals', Phase.CORE_ML, 7),
+        createMockSkill('supervised-learning', 'Supervised Learning', Phase.CORE_ML, 8),
       ];
 
       const dependencies: SkillDependency[] = [

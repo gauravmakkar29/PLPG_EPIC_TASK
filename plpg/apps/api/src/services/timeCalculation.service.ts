@@ -1,5 +1,5 @@
 import { logger } from '../lib/logger.js';
-import type { RoadmapModule, Skill, Resource } from '@plpg/shared';
+import type { Skill, Resource } from '@plpg/shared';
 
 export interface TimeCalculationConfig {
   /** Practice time ratio (default: 0.5 = 50% of resource time) */

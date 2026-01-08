@@ -24,6 +24,7 @@ const createMockSkill = (overrides: Partial<Skill> = {}): Skill => ({
   name: 'Python Basics',
   slug: 'python-basics',
   description: 'Learn Python fundamentals',
+  whyThisMatters: null,
   phase: Phase.FOUNDATION,
   estimatedHours: 10,
   isOptional: false,

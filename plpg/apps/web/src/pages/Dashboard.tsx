@@ -1,29 +1,22 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import api from '../services/api';
 import { SignOutButton } from '../components/auth/SignOutButton';
 import { EmailVerificationBanner } from '../components/auth/EmailVerificationBanner';
 import { MetroMapSidebar } from '../components/dashboard/MetroMapSidebar';
 import { MobileDrawer } from '../components/dashboard/MetroMapSidebar/MobileDrawer';
 import { PathPreviewScreen } from '../components/dashboard/PathPreviewScreen';
+import { ModuleDetail } from '../components/dashboard/ModuleDetail';
 import { useRoadmap, useCurrentModule } from '../hooks/useRoadmap';
 import { useSubscription } from '../hooks/useSubscription';
-
-interface HealthStatus {
-  status: 'healthy' | 'unhealthy';
-  timestamp: string;
-  uptime: number;
-  database: 'connected' | 'disconnected';
-}
+import { useModuleProgress } from '../hooks/useModuleProgress';
+import { PHASE_ORDER } from '@plpg/shared';
 
 export default function Dashboard() {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [health, setHealth] = useState<HealthStatus | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [selectedModuleId, setSelectedModuleId] = useState<string | null>(null);
 
   // Roadmap data
   const { data: roadmap, isLoading: roadmapLoading } = useRoadmap();
@@ -32,35 +25,91 @@ export default function Dashboard() {
   // Subscription status
   const subscription = useSubscription();
 
-  useEffect(() => {
-    const fetchHealth = async () => {
-      try {
-        setLoading(true);
-        const response = await api.get('/health');
-        setHealth(response.data);
-        setError(null);
-      } catch (err) {
-        setError('Failed to connect to API');
-        setHealth(null);
-      } finally {
-        setLoading(false);
-      }
-    };
+  // Module progress hook
+  const { markComplete, isLoading: isMarkingComplete } = useModuleProgress();
 
-    fetchHealth();
-    const interval = setInterval(fetchHealth, 10000); // Refresh every 10 seconds
-    return () => clearInterval(interval);
+  // Sort modules by phase and sequence order
+  const sortedModules = useMemo(() => {
+    if (!roadmap?.modules) return [];
+    return [...roadmap.modules].sort((a, b) => {
+      const aPhaseIdx = PHASE_ORDER.indexOf(a.phase);
+      const bPhaseIdx = PHASE_ORDER.indexOf(b.phase);
+      if (aPhaseIdx !== bPhaseIdx) return aPhaseIdx - bPhaseIdx;
+      return a.sequenceOrder - b.sequenceOrder;
+    });
+  }, [roadmap?.modules]);
+
+  // Get the selected module
+  const selectedModule = useMemo(() => {
+    if (!selectedModuleId) return null;
+    return sortedModules.find((m) => m.id === selectedModuleId) || null;
+  }, [selectedModuleId, sortedModules]);
+
+  // Get module index in sorted list
+  const selectedModuleIndex = useMemo(() => {
+    if (!selectedModule) return -1;
+    return sortedModules.findIndex((m) => m.id === selectedModule.id);
+  }, [selectedModule, sortedModules]);
+
+  // Get total modules in the current phase
+  const modulesInCurrentPhase = useMemo(() => {
+    if (!selectedModule) return [];
+    return sortedModules.filter((m) => m.phase === selectedModule.phase);
+  }, [selectedModule, sortedModules]);
+
+  // Get module index within its phase
+  const moduleIndexInPhase = useMemo(() => {
+    if (!selectedModule) return -1;
+    return modulesInCurrentPhase.findIndex((m) => m.id === selectedModule.id);
+  }, [selectedModule, modulesInCurrentPhase]);
+
+  // Auto-select current module if none selected
+  useEffect(() => {
+    if (!selectedModuleId && currentModule && subscription.isPro) {
+      setSelectedModuleId(currentModule.id);
+    }
+  }, [selectedModuleId, currentModule, subscription.isPro]);
+
+  const handleModuleClick = useCallback((moduleId: string) => {
+    setSelectedModuleId(moduleId);
+    setIsMobileMenuOpen(false);
   }, []);
 
-  const handleModuleClick = (moduleId: string) => {
-    // TODO: Navigate to module detail or update current module
-    console.log('Module clicked:', moduleId);
-    setIsMobileMenuOpen(false);
-  };
-
-  const handleUpgradeClick = () => {
+  const handleUpgradeClick = useCallback(() => {
     navigate('/pricing');
-  };
+  }, [navigate]);
+
+  const handleMarkComplete = useCallback(async () => {
+    if (!roadmap?.id || !selectedModuleId) return;
+
+    try {
+      await markComplete(roadmap.id, selectedModuleId);
+      // After marking complete, move to next module if available
+      if (selectedModuleIndex < sortedModules.length - 1) {
+        const nextModule = sortedModules[selectedModuleIndex + 1];
+        if (!nextModule.isLocked) {
+          setSelectedModuleId(nextModule.id);
+        }
+      }
+    } catch (err) {
+      console.error('Failed to mark module as complete:', err);
+    }
+  }, [roadmap?.id, selectedModuleId, markComplete, selectedModuleIndex, sortedModules]);
+
+  const handleNavigatePrevious = useCallback(() => {
+    if (selectedModuleIndex > 0) {
+      setSelectedModuleId(sortedModules[selectedModuleIndex - 1].id);
+    }
+  }, [selectedModuleIndex, sortedModules]);
+
+  const handleNavigateNext = useCallback(() => {
+    if (selectedModuleIndex < sortedModules.length - 1) {
+      const nextModule = sortedModules[selectedModuleIndex + 1];
+      if (!nextModule.isLocked) {
+        setSelectedModuleId(nextModule.id);
+      }
+    }
+  }, [selectedModuleIndex, sortedModules]);
 
   // Calculate stats from roadmap
   const totalModules = roadmap?.modules?.length ?? 0;
@@ -136,7 +185,7 @@ export default function Dashboard() {
       <MobileDrawer isOpen={isMobileMenuOpen} onClose={() => setIsMobileMenuOpen(false)}>
         <MetroMapSidebar
           roadmap={roadmap ?? null}
-          currentModuleId={currentModule?.id}
+          currentModuleId={selectedModuleId || currentModule?.id}
           onModuleClick={handleModuleClick}
           className="shadow-none"
         />
@@ -164,7 +213,7 @@ export default function Dashboard() {
               ) : (
                 <MetroMapSidebar
                   roadmap={roadmap ?? null}
-                  currentModuleId={currentModule?.id}
+                  currentModuleId={selectedModuleId || currentModule?.id}
                   onModuleClick={handleModuleClick}
                 />
               )}
@@ -181,69 +230,6 @@ export default function Dashboard() {
               />
             ) : (
               <div className="grid gap-6">
-                {/* System Health Status */}
-                <div className="bg-white rounded-xl shadow-sm p-6">
-                  <h2 className="text-xl font-semibold text-secondary-900 mb-4">System Status</h2>
-                  {loading ? (
-                    <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 rounded-full bg-yellow-400 animate-pulse" />
-                      <span className="text-secondary-600">Checking connection...</span>
-                    </div>
-                  ) : error ? (
-                    <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 rounded-full bg-red-500" />
-                      <span className="text-red-600">{error}</span>
-                    </div>
-                  ) : health ? (
-                    <div className="space-y-3">
-                      <div className="flex items-center gap-2">
-                        <div className={`w-3 h-3 rounded-full ${health.database === 'connected' ? 'bg-green-500' : 'bg-red-500'}`} />
-                        <span className="text-secondary-700">
-                          Database: <span className={health.database === 'connected' ? 'text-green-600 font-medium' : 'text-red-600 font-medium'}>
-                            {health.database}
-                          </span>
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <div className={`w-3 h-3 rounded-full ${health.status === 'healthy' ? 'bg-green-500' : 'bg-red-500'}`} />
-                        <span className="text-secondary-700">
-                          API Status: <span className={health.status === 'healthy' ? 'text-green-600 font-medium' : 'text-red-600 font-medium'}>
-                            {health.status}
-                          </span>
-                        </span>
-                      </div>
-                      <p className="text-secondary-500 text-sm">
-                        Uptime: {Math.floor(health.uptime / 60)} minutes
-                      </p>
-                    </div>
-                  ) : null}
-                </div>
-
-                {/* Current Module Card */}
-                {currentModule && (
-                  <div className="bg-white rounded-xl shadow-sm p-6 border-l-4 border-primary-500">
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <span className="text-xs font-medium text-primary-600 uppercase tracking-wide">
-                          Current Module
-                        </span>
-                        <h2 className="text-xl font-semibold text-secondary-900 mt-1">
-                          {currentModule.skill.name}
-                        </h2>
-                        <p className="text-secondary-600 mt-2">
-                          {currentModule.skill.description}
-                        </p>
-                      </div>
-                      <span className="text-sm text-secondary-500 whitespace-nowrap ml-4">
-                        ~{currentModule.skill.estimatedHours}h
-                      </span>
-                    </div>
-                    <button className="mt-4 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors">
-                      Continue Learning
-                    </button>
-                  </div>
-                )}
-
                 {/* Empty state when no roadmap */}
                 {!roadmapLoading && !roadmap && (
                   <div className="bg-white rounded-xl shadow-sm p-6">
@@ -258,6 +244,21 @@ export default function Dashboard() {
                       Start Onboarding
                     </Link>
                   </div>
+                )}
+
+                {/* Module Detail - Main content area when module is selected */}
+                {selectedModule && (
+                  <ModuleDetail
+                    module={selectedModule}
+                    moduleIndex={moduleIndexInPhase}
+                    totalModulesInPhase={modulesInCurrentPhase.length}
+                    onMarkComplete={handleMarkComplete}
+                    onNavigatePrevious={handleNavigatePrevious}
+                    onNavigateNext={handleNavigateNext}
+                    isFirst={selectedModuleIndex === 0}
+                    isLast={selectedModuleIndex === sortedModules.length - 1 || (selectedModuleIndex < sortedModules.length - 1 && sortedModules[selectedModuleIndex + 1].isLocked)}
+                    isMarkingComplete={isMarkingComplete}
+                  />
                 )}
 
                 {/* Stats Cards */}

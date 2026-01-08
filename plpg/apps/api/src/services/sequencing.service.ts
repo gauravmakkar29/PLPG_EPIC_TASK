@@ -52,7 +52,7 @@ export function buildDependencyGraph(
  */
 export function detectCircularDependency(
   graph: Map<string, Set<string>>,
-  skillMap: Map<string, Skill>
+  _skillMap: Map<string, Skill>
 ): string[] | null {
   const visited = new Set<string>();
   const recursionStack = new Set<string>();

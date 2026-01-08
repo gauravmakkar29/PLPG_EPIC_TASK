@@ -5,7 +5,6 @@ import {
   Phase,
   PHASE_LABELS,
   PHASE_DESCRIPTIONS,
-  PHASE_ORDER,
 } from '@plpg/shared/constants';
 
 export interface RoadmapModuleWithProgress {
@@ -178,7 +177,7 @@ export async function getRoadmap(userId: string): Promise<RoadmapResponse> {
         description: module.skill.description,
         phase: module.skill.phase,
         estimatedHours: module.skill.estimatedHours,
-        resources: module.skill.resources.map((r) => ({
+        resources: module.skill.resources.map((r: { id: string; title: string; url: string; type: string; provider: string | null; durationMinutes: number | null; isFree: boolean; quality: number }) => ({
           id: r.id,
           title: r.title,
           url: r.url,
@@ -201,7 +200,8 @@ export async function getRoadmap(userId: string): Promise<RoadmapResponse> {
   }
 
   // Build phases array with progress calculations
-  const phases: RoadmapPhase[] = [];
+  // Initial phases without metadata - will be completed later
+  const phases: Array<Omit<RoadmapPhase, 'name' | 'description' | 'status'>> = [];
   for (const [phaseName, modules] of phaseMap.entries()) {
     const totalHours = modules.reduce(
       (sum, m) => sum + m.skill.estimatedHours,
@@ -261,7 +261,7 @@ export async function getRoadmap(userId: string): Promise<RoadmapResponse> {
 
   // Calculate phase status for each phase
   const calculatePhaseStatus = (
-    phaseKey: string,
+    _phaseKey: string,
     phaseIndex: number,
     allPhases: Array<{ phase: string; completedModules: number; totalModules: number }>
   ): PhaseStatus => {
@@ -326,13 +326,13 @@ export async function getRoadmap(userId: string): Promise<RoadmapResponse> {
   // Calculate overall progress
   const totalModules = roadmap.modules.length;
   const completedModules = roadmap.modules.filter(
-    (m) => m.progress[0]?.status === 'completed'
+    (m: { progress: Array<{ status: string }> }) => m.progress[0]?.status === 'completed'
   ).length;
   const inProgressModules = roadmap.modules.filter(
-    (m) => m.progress[0]?.status === 'in_progress'
+    (m: { progress: Array<{ status: string }> }) => m.progress[0]?.status === 'in_progress'
   ).length;
   const skippedModules = roadmap.modules.filter(
-    (m) => m.progress[0]?.status === 'skipped' || m.isSkipped
+    (m: { progress: Array<{ status: string }>; isSkipped: boolean }) => m.progress[0]?.status === 'skipped' || m.isSkipped
   ).length;
   const notStartedModules = totalModules - completedModules - inProgressModules - skippedModules;
 

@@ -13,6 +13,7 @@ function createMockSkill(overrides: Partial<Skill> = {}): Skill {
     name: 'Test Skill',
     slug: 'test-skill',
     description: 'Test description',
+    whyThisMatters: null,
     phase: 'foundation',
     estimatedHours: 10,
     isOptional: false,

@@ -6,6 +6,8 @@ import { getRoadmap, type RoadmapResponse } from '../services/roadmapRetrieval.s
 import {
   recalculateRoadmapTime,
   updateModuleSkipStatus,
+  updateModuleProgress,
+  type UpdateProgressResult,
 } from '../services/roadmap.service.js';
 import { prisma } from '../lib/prisma.js';
 import { logger } from '../lib/logger.js';
@@ -70,7 +72,7 @@ export async function getSequencedSkills(
     }
 
     // Load all dependencies for these skills
-    const skillIds = skills.map((s) => s.id);
+    const skillIds = skills.map((s: { id: string }) => s.id);
     const dependencies = await prisma.skillDependency.findMany({
       where: {
         skillId: { in: skillIds },
@@ -83,7 +85,7 @@ export async function getSequencedSkills(
     });
 
     // Cast skills to Skill[] with proper Phase type
-    const typedSkills: Skill[] = skills.map(s => ({
+    const typedSkills: Skill[] = skills.map((s: { id: string; name: string; slug: string; description: string; whyThisMatters: string | null; phase: string; estimatedHours: number; isOptional: boolean; sequenceOrder: number; createdAt: Date; updatedAt: Date }) => ({
       ...s,
       phase: s.phase as Phase
     }));
@@ -274,6 +276,73 @@ export async function updateModuleSkip(
     });
   } catch (error) {
     logger.error({ error, userId: req.user?.id }, 'Error updating module skip status');
+    next(error);
+  }
+}
+
+/**
+ * Update a module's progress status (mark as in_progress, completed, etc.)
+ * PATCH /v1/roadmap/:id/modules/:moduleId/progress
+ */
+export async function updateProgress(
+  req: Request,
+  res: Response<{ success: true; data: UpdateProgressResult }>,
+  next: NextFunction
+): Promise<void> {
+  try {
+    const userId = req.user!.id;
+    const roadmapId = req.params.id;
+    const moduleId = req.params.moduleId;
+    const { status, timeSpentMinutes, notes } = req.body;
+
+    const validStatuses = ['not_started', 'in_progress', 'completed', 'skipped'];
+    if (!status || !validStatuses.includes(status)) {
+      throw new BadRequestError(`status must be one of: ${validStatuses.join(', ')}`);
+    }
+
+    // Verify roadmap belongs to user
+    const roadmap = await prisma.roadmap.findFirst({
+      where: {
+        id: roadmapId,
+        userId,
+      },
+    });
+
+    if (!roadmap) {
+      throw new NotFoundError('Roadmap not found');
+    }
+
+    // Verify module belongs to roadmap and is not locked
+    const module = await prisma.roadmapModule.findFirst({
+      where: {
+        id: moduleId,
+        roadmapId,
+      },
+    });
+
+    if (!module) {
+      throw new NotFoundError('Module not found');
+    }
+
+    if (module.isLocked) {
+      throw new BadRequestError('Cannot update progress for a locked module');
+    }
+
+    const result = await updateModuleProgress({
+      userId,
+      roadmapId,
+      moduleId,
+      status,
+      timeSpentMinutes,
+      notes,
+    });
+
+    res.json({
+      success: true,
+      data: result,
+    });
+  } catch (error) {
+    logger.error({ error, userId: req.user?.id }, 'Error updating module progress');
     next(error);
   }
 }

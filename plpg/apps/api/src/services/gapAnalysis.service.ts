@@ -1,6 +1,6 @@
 import { prisma } from '../lib/prisma.js';
 import { logger } from '../lib/logger.js';
-import type { Skill, SkillDependency } from '@plpg/shared';
+import type { Skill } from '@plpg/shared';
 
 export interface GapAnalysisResult {
   missingSkills: Skill[];
@@ -197,7 +197,7 @@ export async function analyzeGap(userId: string, targetRole: string): Promise<Ga
       slug: { in: Array.from(userSkillSlugs) },
     },
   });
-  const userSkillIds = new Set(userSkills.map((s) => s.id));
+  const userSkillIds = new Set<string>(userSkills.map((s: { id: string }) => s.id));
 
   logger.debug(
     { userId, userSkillCount: userSkillIds.size, requiredSkillCount: requiredSkills.length },

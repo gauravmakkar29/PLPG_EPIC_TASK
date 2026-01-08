@@ -49,6 +49,7 @@ CREATE TABLE "skills" (
     "name" TEXT NOT NULL,
     "slug" TEXT NOT NULL,
     "description" TEXT NOT NULL,
+    "whyThisMatters" TEXT,
     "phase" TEXT NOT NULL,
     "estimatedHours" INTEGER NOT NULL,
     "isOptional" BOOLEAN NOT NULL DEFAULT false,

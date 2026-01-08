@@ -45,7 +45,7 @@ export async function recalculateRoadmapTime(roadmapId: string): Promise<number>
 
   // Calculate time using the time calculation service
   const timeResult = calculateRoadmapTime(
-    roadmap.modules.map((module) => ({
+    roadmap.modules.map((module: { id: string; skillId: string; isSkipped: boolean; skill: { id: string; name: string; slug: string; description: string; whyThisMatters: string | null; phase: string; estimatedHours: number; isOptional: boolean; sequenceOrder: number; createdAt: Date; updatedAt: Date; resources: Array<{ id: string; skillId: string; title: string; url: string; type: string; provider: string | null; durationMinutes: number | null; isFree: boolean; quality: number; createdAt: Date; updatedAt: Date }> } }) => ({
       id: module.id,
       skillId: module.skillId,
       isSkipped: module.isSkipped,
@@ -67,7 +67,7 @@ export async function recalculateRoadmapTime(roadmapId: string): Promise<number>
       roadmapId,
       totalEstimatedHours: timeResult.roundedTotalHours,
       moduleCount: roadmap.modules.length,
-      skippedCount: roadmap.modules.filter((m) => m.isSkipped).length,
+      skippedCount: roadmap.modules.filter((m: { isSkipped: boolean }) => m.isSkipped).length,
     },
     'Roadmap time recalculated'
   );
@@ -188,5 +188,186 @@ export async function updateModuleSkipStatus(
 
   // Recalculate total hours
   return await recalculateRoadmapTime(roadmapId);
+}
+
+export interface UpdateProgressInput {
+  userId: string;
+  roadmapId: string;
+  moduleId: string;
+  status: 'not_started' | 'in_progress' | 'completed' | 'skipped';
+  timeSpentMinutes?: number;
+  notes?: string;
+}
+
+export interface UpdateProgressResult {
+  progress: {
+    id: string;
+    status: string;
+    startedAt: Date | null;
+    completedAt: Date | null;
+    timeSpentMinutes: number;
+  };
+  unlockedModules: string[];
+}
+
+/**
+ * Update the progress status for a module.
+ * When a module is marked as completed, unlock the next sequential module.
+ */
+export async function updateModuleProgress(
+  input: UpdateProgressInput
+): Promise<UpdateProgressResult> {
+  const { userId, roadmapId, moduleId, status, timeSpentMinutes, notes } = input;
+  const now = new Date();
+
+  // First, get or create the progress record
+  let progress = await prisma.progress.findUnique({
+    where: {
+      userId_roadmapModuleId: {
+        userId,
+        roadmapModuleId: moduleId,
+      },
+    },
+  });
+
+  const updateData: {
+    status: string;
+    startedAt?: Date;
+    completedAt?: Date | null;
+    timeSpentMinutes?: number;
+    notes?: string;
+  } = {
+    status,
+  };
+
+  // Set timestamps based on status changes
+  if (status === 'in_progress' && (!progress || progress.status === 'not_started')) {
+    updateData.startedAt = now;
+  }
+
+  if (status === 'completed') {
+    updateData.completedAt = now;
+    if (!progress?.startedAt) {
+      updateData.startedAt = now;
+    }
+  }
+
+  if (status === 'not_started') {
+    updateData.completedAt = null;
+  }
+
+  if (timeSpentMinutes !== undefined) {
+    updateData.timeSpentMinutes = timeSpentMinutes;
+  }
+
+  if (notes !== undefined) {
+    updateData.notes = notes;
+  }
+
+  // Upsert the progress record
+  progress = await prisma.progress.upsert({
+    where: {
+      userId_roadmapModuleId: {
+        userId,
+        roadmapModuleId: moduleId,
+      },
+    },
+    update: updateData,
+    create: {
+      userId,
+      roadmapModuleId: moduleId,
+      status,
+      startedAt: status !== 'not_started' ? now : null,
+      completedAt: status === 'completed' ? now : null,
+      timeSpentMinutes: timeSpentMinutes || 0,
+      notes: notes || null,
+    },
+  });
+
+  // Track unlocked modules
+  const unlockedModules: string[] = [];
+
+  // If module is completed, unlock the next module(s)
+  if (status === 'completed') {
+    // Get the current module to find its sequence order
+    const currentModule = await prisma.roadmapModule.findUnique({
+      where: { id: moduleId },
+    });
+
+    if (currentModule) {
+      // Find and unlock the next module in sequence
+      const nextModule = await prisma.roadmapModule.findFirst({
+        where: {
+          roadmapId,
+          sequenceOrder: currentModule.sequenceOrder + 1,
+          isLocked: true,
+        },
+      });
+
+      if (nextModule) {
+        await prisma.roadmapModule.update({
+          where: { id: nextModule.id },
+          data: { isLocked: false },
+        });
+        unlockedModules.push(nextModule.id);
+
+        logger.info(
+          {
+            userId,
+            roadmapId,
+            completedModuleId: moduleId,
+            unlockedModuleId: nextModule.id,
+          },
+          'Module unlocked after completion'
+        );
+      }
+
+      // Update completed hours on roadmap
+      const completedModules = await prisma.roadmapModule.findMany({
+        where: {
+          roadmapId,
+        },
+        include: {
+          skill: true,
+          progress: {
+            where: {
+              status: 'completed',
+            },
+          },
+        },
+      });
+
+      const completedHours = completedModules
+        .filter((m: { progress: unknown[] }) => m.progress.length > 0)
+        .reduce((sum: number, m: { skill: { estimatedHours: number } }) => sum + m.skill.estimatedHours, 0);
+
+      await prisma.roadmap.update({
+        where: { id: roadmapId },
+        data: { completedHours },
+      });
+    }
+  }
+
+  logger.info(
+    {
+      userId,
+      roadmapId,
+      moduleId,
+      status,
+      unlockedCount: unlockedModules.length,
+    },
+    'Module progress updated'
+  );
+
+  return {
+    progress: {
+      id: progress.id,
+      status: progress.status,
+      startedAt: progress.startedAt,
+      completedAt: progress.completedAt,
+      timeSpentMinutes: progress.timeSpentMinutes,
+    },
+    unlockedModules,
+  };
 }
 

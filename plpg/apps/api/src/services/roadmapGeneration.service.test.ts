@@ -3,6 +3,7 @@ import { generateRoadmap } from './roadmapGeneration.service.js';
 import { prisma } from '../lib/prisma.js';
 import { analyzeGap } from './gapAnalysis.service.js';
 import { sequenceSkills } from './sequencing.service.js';
+import { Phase } from '@plpg/shared';
 
 // Mock dependencies
 vi.mock('../lib/prisma.js', () => ({
@@ -55,7 +56,8 @@ describe('Roadmap Generation Service', () => {
         name: 'ML Fundamentals',
         slug: 'ml-fundamentals',
         description: 'ML basics',
-        phase: 'intermediate',
+        whyThisMatters: null,
+        phase: Phase.CORE_ML,
         estimatedHours: 40,
         isOptional: false,
         sequenceOrder: 1,
@@ -67,17 +69,17 @@ describe('Roadmap Generation Service', () => {
     vi.mocked(prisma.roadmap.findFirst).mockResolvedValue(null);
     vi.mocked(prisma.onboardingState.findUnique).mockResolvedValue(mockOnboardingState as any);
     vi.mocked(analyzeGap).mockResolvedValue({
-      missingSkills: mockSkills,
-      orderedSkills: mockSkills,
+      missingSkills: mockSkills as any,
+      orderedSkills: mockSkills as any,
       totalHours: 40,
     });
     vi.mocked(prisma.skillDependency.findMany).mockResolvedValue([]);
     vi.mocked(sequenceSkills).mockReturnValue({
-      sequencedSkills: mockSkills.map((s, i) => ({ ...s, sequenceOrder: i + 1 })),
+      sequencedSkills: mockSkills.map((s, i) => ({ ...s, sequenceOrder: i + 1 })) as any,
       phaseGroups: [
         {
-          phase: 'intermediate',
-          skills: mockSkills.map((s, i) => ({ ...s, sequenceOrder: i + 1 })),
+          phase: Phase.CORE_ML,
+          skills: mockSkills.map((s, i) => ({ ...s, sequenceOrder: i + 1 })) as any,
           totalHours: 40,
           sequenceStart: 1,
         },
@@ -186,7 +188,8 @@ describe('Roadmap Generation Service', () => {
         name: 'Skill 1',
         slug: 'skill-1',
         description: 'Description',
-        phase: 'foundation',
+        whyThisMatters: null,
+        phase: Phase.FOUNDATION,
         estimatedHours: 20,
         isOptional: false,
         sequenceOrder: 1,
@@ -198,7 +201,8 @@ describe('Roadmap Generation Service', () => {
         name: 'Skill 2',
         slug: 'skill-2',
         description: 'Description',
-        phase: 'foundation',
+        whyThisMatters: null,
+        phase: Phase.FOUNDATION,
         estimatedHours: 30,
         isOptional: false,
         sequenceOrder: 2,
@@ -210,17 +214,17 @@ describe('Roadmap Generation Service', () => {
     vi.mocked(prisma.roadmap.findFirst).mockResolvedValue(null);
     vi.mocked(prisma.onboardingState.findUnique).mockResolvedValue(mockOnboardingState as any);
     vi.mocked(analyzeGap).mockResolvedValue({
-      missingSkills: mockSkills,
-      orderedSkills: mockSkills,
+      missingSkills: mockSkills as any,
+      orderedSkills: mockSkills as any,
       totalHours: 50,
     });
     vi.mocked(prisma.skillDependency.findMany).mockResolvedValue([]);
     vi.mocked(sequenceSkills).mockReturnValue({
-      sequencedSkills: mockSkills.map((s, i) => ({ ...s, sequenceOrder: i + 1 })),
+      sequencedSkills: mockSkills.map((s, i) => ({ ...s, sequenceOrder: i + 1 })) as any,
       phaseGroups: [
         {
-          phase: 'foundation',
-          skills: mockSkills.map((s, i) => ({ ...s, sequenceOrder: i + 1 })),
+          phase: Phase.FOUNDATION,
+          skills: mockSkills.map((s, i) => ({ ...s, sequenceOrder: i + 1 })) as any,
           totalHours: 50,
           sequenceStart: 1,
         },
@@ -259,7 +263,8 @@ describe('Roadmap Generation Service', () => {
         name: 'Skill 1',
         slug: 'skill-1',
         description: 'Description',
-        phase: 'foundation',
+        whyThisMatters: null,
+        phase: Phase.FOUNDATION,
         estimatedHours: 50, // 50 total hours
         isOptional: false,
         sequenceOrder: 1,
@@ -271,17 +276,17 @@ describe('Roadmap Generation Service', () => {
     vi.mocked(prisma.roadmap.findFirst).mockResolvedValue(null);
     vi.mocked(prisma.onboardingState.findUnique).mockResolvedValue(mockOnboardingState as any);
     vi.mocked(analyzeGap).mockResolvedValue({
-      missingSkills: mockSkills,
-      orderedSkills: mockSkills,
+      missingSkills: mockSkills as any,
+      orderedSkills: mockSkills as any,
       totalHours: 50,
     });
     vi.mocked(prisma.skillDependency.findMany).mockResolvedValue([]);
     vi.mocked(sequenceSkills).mockReturnValue({
-      sequencedSkills: mockSkills.map((s, i) => ({ ...s, sequenceOrder: i + 1 })),
+      sequencedSkills: mockSkills.map((s, i) => ({ ...s, sequenceOrder: i + 1 })) as any,
       phaseGroups: [
         {
-          phase: 'foundation',
-          skills: mockSkills.map((s, i) => ({ ...s, sequenceOrder: i + 1 })),
+          phase: Phase.FOUNDATION,
+          skills: mockSkills.map((s, i) => ({ ...s, sequenceOrder: i + 1 })) as any,
           totalHours: 50,
           sequenceStart: 1,
         },
@@ -324,7 +329,8 @@ describe('Roadmap Generation Service', () => {
         name: 'Foundation Skill',
         slug: 'foundation-skill',
         description: 'Description',
-        phase: 'foundation',
+        whyThisMatters: null,
+        phase: Phase.FOUNDATION,
         estimatedHours: 20,
         isOptional: false,
         sequenceOrder: 1,
@@ -333,10 +339,11 @@ describe('Roadmap Generation Service', () => {
       },
       {
         id: 'skill-2',
-        name: 'Intermediate Skill',
-        slug: 'intermediate-skill',
+        name: 'Core ML Skill',
+        slug: 'core-ml-skill',
         description: 'Description',
-        phase: 'intermediate',
+        whyThisMatters: null,
+        phase: Phase.CORE_ML,
         estimatedHours: 30,
         isOptional: false,
         sequenceOrder: 2,
@@ -348,23 +355,23 @@ describe('Roadmap Generation Service', () => {
     vi.mocked(prisma.roadmap.findFirst).mockResolvedValue(null);
     vi.mocked(prisma.onboardingState.findUnique).mockResolvedValue(mockOnboardingState as any);
     vi.mocked(analyzeGap).mockResolvedValue({
-      missingSkills: mockSkills,
-      orderedSkills: mockSkills,
+      missingSkills: mockSkills as any,
+      orderedSkills: mockSkills as any,
       totalHours: 50,
     });
     vi.mocked(prisma.skillDependency.findMany).mockResolvedValue([]);
     vi.mocked(sequenceSkills).mockReturnValue({
-      sequencedSkills: mockSkills.map((s, i) => ({ ...s, sequenceOrder: i + 1 })),
+      sequencedSkills: mockSkills.map((s, i) => ({ ...s, sequenceOrder: i + 1 })) as any,
       phaseGroups: [
         {
-          phase: 'foundation',
-          skills: [mockSkills[0]],
+          phase: Phase.FOUNDATION,
+          skills: [mockSkills[0]] as any,
           totalHours: 20,
           sequenceStart: 1,
         },
         {
-          phase: 'intermediate',
-          skills: [mockSkills[1]],
+          phase: Phase.CORE_ML,
+          skills: [mockSkills[1]] as any,
           totalHours: 30,
           sequenceStart: 2,
         },
@@ -390,7 +397,7 @@ describe('Roadmap Generation Service', () => {
         }),
         expect.objectContaining({
           skillId: 'skill-2',
-          phase: 'intermediate',
+          phase: 'core_ml',
           sequenceOrder: 2,
           isLocked: true, // Subsequent modules locked
         }),
@@ -481,7 +488,8 @@ describe('Roadmap Generation Service', () => {
       name: `Skill ${i}`,
       slug: `skill-${i}`,
       description: 'Description',
-      phase: 'foundation',
+      whyThisMatters: null,
+      phase: Phase.FOUNDATION,
       estimatedHours: 10,
       isOptional: false,
       sequenceOrder: i,
@@ -492,17 +500,17 @@ describe('Roadmap Generation Service', () => {
     vi.mocked(prisma.roadmap.findFirst).mockResolvedValue(null);
     vi.mocked(prisma.onboardingState.findUnique).mockResolvedValue(mockOnboardingState as any);
     vi.mocked(analyzeGap).mockResolvedValue({
-      missingSkills: mockSkills,
-      orderedSkills: mockSkills,
+      missingSkills: mockSkills as any,
+      orderedSkills: mockSkills as any,
       totalHours: 1000,
     });
     vi.mocked(prisma.skillDependency.findMany).mockResolvedValue([]);
     vi.mocked(sequenceSkills).mockReturnValue({
-      sequencedSkills: mockSkills.map((s, i) => ({ ...s, sequenceOrder: i + 1 })),
+      sequencedSkills: mockSkills.map((s, i) => ({ ...s, sequenceOrder: i + 1 })) as any,
       phaseGroups: [
         {
-          phase: 'foundation',
-          skills: mockSkills.map((s, i) => ({ ...s, sequenceOrder: i + 1 })),
+          phase: Phase.FOUNDATION,
+          skills: mockSkills.map((s, i) => ({ ...s, sequenceOrder: i + 1 })) as any,
           totalHours: 1000,
           sequenceStart: 1,
         },
