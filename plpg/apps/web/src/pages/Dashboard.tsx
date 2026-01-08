@@ -1,12 +1,14 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import api from '../services/api';
 import { SignOutButton } from '../components/auth/SignOutButton';
 import { EmailVerificationBanner } from '../components/auth/EmailVerificationBanner';
 import { MetroMapSidebar } from '../components/dashboard/MetroMapSidebar';
 import { MobileDrawer } from '../components/dashboard/MetroMapSidebar/MobileDrawer';
+import { PathPreviewScreen } from '../components/dashboard/PathPreviewScreen';
 import { useRoadmap, useCurrentModule } from '../hooks/useRoadmap';
+import { useSubscription } from '../hooks/useSubscription';
 
 interface HealthStatus {
   status: 'healthy' | 'unhealthy';
@@ -17,6 +19,7 @@ interface HealthStatus {
 
 export default function Dashboard() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [health, setHealth] = useState<HealthStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -25,6 +28,9 @@ export default function Dashboard() {
   // Roadmap data
   const { data: roadmap, isLoading: roadmapLoading } = useRoadmap();
   const currentModule = useCurrentModule();
+
+  // Subscription status
+  const subscription = useSubscription();
 
   useEffect(() => {
     const fetchHealth = async () => {
@@ -50,6 +56,10 @@ export default function Dashboard() {
     // TODO: Navigate to module detail or update current module
     console.log('Module clicked:', moduleId);
     setIsMobileMenuOpen(false);
+  };
+
+  const handleUpgradeClick = () => {
+    navigate('/pricing');
   };
 
   // Calculate stats from roadmap
@@ -163,111 +173,119 @@ export default function Dashboard() {
 
           {/* Main Content */}
           <main className="flex-1 min-w-0">
-            <div className="grid gap-6">
-              {/* System Health Status */}
-              <div className="bg-white rounded-xl shadow-sm p-6">
-                <h2 className="text-xl font-semibold text-secondary-900 mb-4">System Status</h2>
-                {loading ? (
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded-full bg-yellow-400 animate-pulse" />
-                    <span className="text-secondary-600">Checking connection...</span>
-                  </div>
-                ) : error ? (
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded-full bg-red-500" />
-                    <span className="text-red-600">{error}</span>
-                  </div>
-                ) : health ? (
-                  <div className="space-y-3">
+            {/* Show PathPreviewScreen for free/trial users with roadmap */}
+            {!subscription.isPro && roadmap ? (
+              <PathPreviewScreen
+                onModuleClick={handleModuleClick}
+                onUpgradeClick={handleUpgradeClick}
+              />
+            ) : (
+              <div className="grid gap-6">
+                {/* System Health Status */}
+                <div className="bg-white rounded-xl shadow-sm p-6">
+                  <h2 className="text-xl font-semibold text-secondary-900 mb-4">System Status</h2>
+                  {loading ? (
                     <div className="flex items-center gap-2">
-                      <div className={`w-3 h-3 rounded-full ${health.database === 'connected' ? 'bg-green-500' : 'bg-red-500'}`} />
-                      <span className="text-secondary-700">
-                        Database: <span className={health.database === 'connected' ? 'text-green-600 font-medium' : 'text-red-600 font-medium'}>
-                          {health.database}
-                        </span>
-                      </span>
+                      <div className="w-3 h-3 rounded-full bg-yellow-400 animate-pulse" />
+                      <span className="text-secondary-600">Checking connection...</span>
                     </div>
+                  ) : error ? (
                     <div className="flex items-center gap-2">
-                      <div className={`w-3 h-3 rounded-full ${health.status === 'healthy' ? 'bg-green-500' : 'bg-red-500'}`} />
-                      <span className="text-secondary-700">
-                        API Status: <span className={health.status === 'healthy' ? 'text-green-600 font-medium' : 'text-red-600 font-medium'}>
-                          {health.status}
-                        </span>
-                      </span>
+                      <div className="w-3 h-3 rounded-full bg-red-500" />
+                      <span className="text-red-600">{error}</span>
                     </div>
-                    <p className="text-secondary-500 text-sm">
-                      Uptime: {Math.floor(health.uptime / 60)} minutes
-                    </p>
-                  </div>
-                ) : null}
-              </div>
-
-              {/* Current Module Card */}
-              {currentModule && (
-                <div className="bg-white rounded-xl shadow-sm p-6 border-l-4 border-primary-500">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <span className="text-xs font-medium text-primary-600 uppercase tracking-wide">
-                        Current Module
-                      </span>
-                      <h2 className="text-xl font-semibold text-secondary-900 mt-1">
-                        {currentModule.skill.name}
-                      </h2>
-                      <p className="text-secondary-600 mt-2">
-                        {currentModule.skill.description}
+                  ) : health ? (
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-2">
+                        <div className={`w-3 h-3 rounded-full ${health.database === 'connected' ? 'bg-green-500' : 'bg-red-500'}`} />
+                        <span className="text-secondary-700">
+                          Database: <span className={health.database === 'connected' ? 'text-green-600 font-medium' : 'text-red-600 font-medium'}>
+                            {health.database}
+                          </span>
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className={`w-3 h-3 rounded-full ${health.status === 'healthy' ? 'bg-green-500' : 'bg-red-500'}`} />
+                        <span className="text-secondary-700">
+                          API Status: <span className={health.status === 'healthy' ? 'text-green-600 font-medium' : 'text-red-600 font-medium'}>
+                            {health.status}
+                          </span>
+                        </span>
+                      </div>
+                      <p className="text-secondary-500 text-sm">
+                        Uptime: {Math.floor(health.uptime / 60)} minutes
                       </p>
                     </div>
-                    <span className="text-sm text-secondary-500 whitespace-nowrap ml-4">
-                      ~{currentModule.skill.estimatedHours}h
-                    </span>
+                  ) : null}
+                </div>
+
+                {/* Current Module Card */}
+                {currentModule && (
+                  <div className="bg-white rounded-xl shadow-sm p-6 border-l-4 border-primary-500">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <span className="text-xs font-medium text-primary-600 uppercase tracking-wide">
+                          Current Module
+                        </span>
+                        <h2 className="text-xl font-semibold text-secondary-900 mt-1">
+                          {currentModule.skill.name}
+                        </h2>
+                        <p className="text-secondary-600 mt-2">
+                          {currentModule.skill.description}
+                        </p>
+                      </div>
+                      <span className="text-sm text-secondary-500 whitespace-nowrap ml-4">
+                        ~{currentModule.skill.estimatedHours}h
+                      </span>
+                    </div>
+                    <button className="mt-4 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors">
+                      Continue Learning
+                    </button>
                   </div>
-                  <button className="mt-4 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors">
-                    Continue Learning
-                  </button>
-                </div>
-              )}
+                )}
 
-              {/* Empty state when no roadmap */}
-              {!roadmapLoading && !roadmap && (
-                <div className="bg-white rounded-xl shadow-sm p-6">
-                  <h2 className="text-xl font-semibold text-secondary-900 mb-4">Your Learning Path</h2>
-                  <p className="text-secondary-600">
-                    Your personalized roadmap will appear here once you complete the onboarding process.
-                  </p>
-                  <Link
-                    to="/onboarding"
-                    className="mt-4 inline-block px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
-                  >
-                    Start Onboarding
-                  </Link>
-                </div>
-              )}
+                {/* Empty state when no roadmap */}
+                {!roadmapLoading && !roadmap && (
+                  <div className="bg-white rounded-xl shadow-sm p-6">
+                    <h2 className="text-xl font-semibold text-secondary-900 mb-4">Your Learning Path</h2>
+                    <p className="text-secondary-600">
+                      Your personalized roadmap will appear here once you complete the onboarding process.
+                    </p>
+                    <Link
+                      to="/onboarding"
+                      className="mt-4 inline-block px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
+                    >
+                      Start Onboarding
+                    </Link>
+                  </div>
+                )}
 
-              {/* Stats Cards */}
-              <div className="grid sm:grid-cols-3 gap-6">
-                <div className="bg-white rounded-xl shadow-sm p-6">
-                  <h3 className="text-lg font-semibold text-secondary-900 mb-2">Progress</h3>
-                  <div className="text-3xl font-bold text-primary-600">{progressPercent}%</div>
-                  <p className="text-secondary-500 text-sm">
-                    {completedModules > 0
-                      ? `${completedModules} modules completed`
-                      : 'Complete your first module'}
-                  </p>
-                </div>
-                <div className="bg-white rounded-xl shadow-sm p-6">
-                  <h3 className="text-lg font-semibold text-secondary-900 mb-2">Time Invested</h3>
-                  <div className="text-3xl font-bold text-primary-600">{totalHours}h</div>
-                  <p className="text-secondary-500 text-sm">
-                    {totalHours > 0 ? 'Keep it up!' : 'Start learning today'}
-                  </p>
-                </div>
-                <div className="bg-white rounded-xl shadow-sm p-6">
-                  <h3 className="text-lg font-semibold text-secondary-900 mb-2">Streak</h3>
-                  <div className="text-3xl font-bold text-primary-600">0 days</div>
-                  <p className="text-secondary-500 text-sm">Build your streak</p>
+                {/* Stats Cards */}
+                <div className="grid sm:grid-cols-3 gap-6">
+                  <div className="bg-white rounded-xl shadow-sm p-6">
+                    <h3 className="text-lg font-semibold text-secondary-900 mb-2">Progress</h3>
+                    <div className="text-3xl font-bold text-primary-600">{progressPercent}%</div>
+                    <p className="text-secondary-500 text-sm">
+                      {completedModules > 0
+                        ? `${completedModules} modules completed`
+                        : 'Complete your first module'}
+                    </p>
+                  </div>
+                  <div className="bg-white rounded-xl shadow-sm p-6">
+                    <h3 className="text-lg font-semibold text-secondary-900 mb-2">Time Invested</h3>
+                    <div className="text-3xl font-bold text-primary-600">{totalHours}h</div>
+                    <p className="text-secondary-500 text-sm">
+                      {totalHours > 0 ? 'Keep it up!' : 'Start learning today'}
+                    </p>
+                  </div>
+                  <div className="bg-white rounded-xl shadow-sm p-6">
+                    <h3 className="text-lg font-semibold text-secondary-900 mb-2">Streak</h3>
+                    <div className="text-3xl font-bold text-primary-600">0 days</div>
+                    <p className="text-secondary-500 text-sm">Build your streak</p>
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
           </main>
         </div>
       </div>
